@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Anexa - Crie, remixe e gere variações visuais de alta fidelidade usando IA Gemini 3.0 Pro.">
+    <meta name="theme-color" content="#000000">
+    
+    <title>Anexa | Future Visuals</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        background: '#020202', // Pure Black
+                        surface: '#080808', // Off Black
+                        neon: {
+                            400: '#eff3a3',
+                            500: '#E2E783', // The Requested Green
+                            600: '#cace50',
+                        },
+                        electric: {
+                            400: '#406aff',
+                            500: '#0236C5', // The Requested Blue
+                            600: '#002080',
+                            900: '#000d33'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    },
+                    animation: {
+                        'spin-slow': 'spin 12s linear infinite',
+                        'fade-in': 'fadeIn 0.6s ease-out forwards',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 3s ease-in-out infinite alternate',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        glow: {
+                            'from': { boxShadow: '0 0 10px -10px #E2E783' },
+                            'to': { boxShadow: '0 0 20px 5px rgba(226, 231, 131, 0.2)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400&family=Anton&family=Bebas+Neue&family=Dancing+Script&family=Lato:wght@300;400;700&family=Lobster&family=Merriweather:wght@300;400;700&family=Montserrat:wght@300;400;700&family=Noto+Sans:wght@300;400;700&family=Nunito:wght@300;400;700&family=Open+Sans:wght@300;400;700&family=Oswald:wght@300;400;700&family=Pacifico&family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;700&family=Raleway:wght@300;400;700&family=Roboto+Condensed:wght@300;400;700&family=Roboto:wght@300;400;700&family=Rubik:wght@300;400;700&family=Ubuntu:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif;
+            background-color: #020202;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+        
+        /* Minimalist Scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #E2E783; }
+
+        /* Ultra-Modern Glassmorphism */
+        .glass-panel {
+            background: rgba(10, 10, 10, 0.4);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Subtle Input Styling */
+        .glass-input {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-input:focus {
+            background: rgba(2, 54, 197, 0.1);
+            border-color: #E2E783;
+            box-shadow: 0 0 15px rgba(226, 231, 131, 0.1);
+        }
+
+        /* Radial Gradients (Backdrops) */
+        .radial-glow-neon {
+            background: radial-gradient(circle, rgba(226, 231, 131, 0.15) 0%, rgba(0,0,0,0) 60%);
+        }
+        .radial-glow-electric {
+            background: radial-gradient(circle, rgba(2, 54, 197, 0.25) 0%, rgba(0,0,0,0) 60%);
+        }
+
+        .text-gradient-main {
+            background: linear-gradient(90deg, #ffffff 0%, #E2E783 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .text-gradient-blue {
+            background: linear-gradient(135deg, #E2E783 0%, #0236C5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* Utility */
+        .btn-hover-effect {
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-hover-effect::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: 0.5s;
+        }
+        .btn-hover-effect:hover::after {
+            left: 100%;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "@google/genai": "https://esm.sh/@google/genai@^1.40.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
