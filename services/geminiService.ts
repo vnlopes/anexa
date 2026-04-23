@@ -4,9 +4,13 @@ import { ReferenceImage, SubjectImage } from "../types";
 
 // Ensure API Key is available
 const getAIClient = () => {
-  const apiKey = process.env.API_KEY;
+  let apiKey = localStorage.getItem('vercel_gemini_api_key');
   if (!apiKey) {
-    throw new Error("API Key not found in environment");
+    apiKey = process.env.API_KEY;
+  }
+  
+  if (!apiKey) {
+    throw new Error("API Key not found in environment or local storage");
   }
   return new GoogleGenAI({ apiKey });
 };

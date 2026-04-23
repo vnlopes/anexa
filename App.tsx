@@ -178,6 +178,8 @@ const App: React.FC = () => {
   const [openSection, setOpenSection] = useState<string | null>(null);
   const toggleSection = (id: string) => setOpenSection(openSection === id ? null : id);
   const [hasApiKey, setHasApiKey] = useState(false);
+  const [showApiInput, setShowApiInput] = useState(false);
+  const [apiInputValue, setApiInputValue] = useState('');
 
   useEffect(() => {
     checkApiKey();
@@ -189,7 +191,13 @@ const App: React.FC = () => {
         const hasKey = await aistudio.hasSelectedApiKey();
         setHasApiKey(hasKey);
      } else {
-         setHasApiKey(true);
+         const localKey = localStorage.getItem('vercel_gemini_api_key');
+         if (localKey) {
+             setHasApiKey(true);
+         } else {
+             setHasApiKey(false);
+             setShowApiInput(true);
+         }
      }
   };
 
@@ -198,7 +206,26 @@ const App: React.FC = () => {
       if (aistudio) {
           await aistudio.openSelectKey();
           setHasApiKey(true);
+      } else {
+          setShowApiInput(true);
       }
+  };
+
+  const saveApiKey = () => {
+      if (apiInputValue && apiInputValue.trim() !== '') {
+          localStorage.setItem('vercel_gemini_api_key', apiInputValue.trim());
+          setHasApiKey(true);
+          setShowApiInput(false);
+          setApiInputValue('');
+          showStatus('success', 'API Key salva com sucesso!');
+      }
+  };
+
+  const clearApiKey = () => {
+      localStorage.removeItem('vercel_gemini_api_key');
+      setHasApiKey(false);
+      showStatus('success', 'API Key removida do cache.');
+      setShowApiInput(true);
   };
 
   const showStatus = (type: 'success' | 'error', text: string) => {
@@ -468,6 +495,40 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col selection:bg-neon-500/30 selection:text-white bg-background text-gray-200 overflow-x-hidden relative">
       
+      {/* API Key Modal Overlay */}
+      {showApiInput && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+              <div className="bg-[#111] border border-white/10 p-8 rounded-sm max-w-md w-full shadow-2xl">
+                  <h2 className="text-2xl text-white font-bold mb-4 tracking-tight">Bem-vindo ao Anexa</h2>
+                  <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+                      Para utilizar a geração de imagens, por favor, insira sua chave da API do Google Gemini. A chave ficará salva no cache do seu navegador.
+                  </p>
+                  <label className="text-[10px] uppercase font-bold tracking-widest text-gray-500 mb-2 block">Gemini API Key</label>
+                  <input 
+                      type="password" 
+                      value={apiInputValue}
+                      onChange={(e) => setApiInputValue(e.target.value)}
+                      placeholder="AIzaSy..."
+                      className="w-full bg-black border border-white/10 rounded-sm px-4 py-3 text-white text-sm focus:outline-none focus:border-neon-500 transition-colors mb-6 font-mono"
+                  />
+                  <div className="flex justify-end gap-4">
+                      {hasApiKey && (
+                          <button onClick={() => setShowApiInput(false)} className="px-6 py-2 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-colors">
+                              Cancelar
+                          </button>
+                      )}
+                      <button 
+                          onClick={saveApiKey}
+                          disabled={!apiInputValue.trim()}
+                          className="px-6 py-2 bg-neon-500 text-black text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-neon-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                          Salvar e Continuar
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
+
       {/* --- BACKGROUND AMBIENCE --- */}
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
           <div className="absolute top-[-20%] left-[20%] w-[60%] h-[60%] radial-glow-electric opacity-30 blur-[120px]"></div>
@@ -520,19 +581,19 @@ const App: React.FC = () => {
           </div>
 
           {/* Center Navigation */}
-          <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/10">
-              <button 
-                  onClick={() => setState(prev => ({...prev, currentView: 'home'}))}
-                  className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${state.currentView === 'home' ? 'bg-neon-500 text-black shadow-[0_0_15px_rgba(226,231,131,0.4)]' : 'text-gray-400 hover:text-white'}`}
-              >
-                  Home
-              </button>
+          <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/10 opacity-0 pointer-events-none">
+              {/* Home button removed */}
           </div>
 
           <div className="flex items-center gap-6 text-xs font-mono">
-             {!hasApiKey && (
+             {!hasApiKey ? (
                   <button onClick={handleSelectKey} className="text-neon-500 animate-pulse font-bold tracking-widest">
                       [ INSERT_KEY ]
+                  </button>
+              ) : (
+                  <button onClick={clearApiKey} className="text-gray-400 hover:text-red-400 transition-colors uppercase tracking-wide flex items-center gap-2" title="Limpar Cache de API Key">
+                      <i className="fas fa-key"></i>
+                      <span className="hidden sm:inline text-[9px]">API</span>
                   </button>
               )}
             
