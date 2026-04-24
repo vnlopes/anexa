@@ -93,6 +93,14 @@
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
         ::-webkit-scrollbar-thumb:hover { background: #0236C5; }
 
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
         /* Ultra-Modern Glassmorphism */
         .glass-panel {
             background: rgba(24, 24, 27, 0.3);

@@ -765,22 +765,22 @@ const App: React.FC = () => {
           </div>
 
           {/* Center Navigation */}
-          <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/10">
+          <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/10 overflow-x-auto max-w-[50vw] sm:max-w-none hide-scrollbar">
               <button 
                   onClick={() => setState(prev => ({...prev, currentTab: 'editor'}))}
-                  className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${state.currentTab === 'editor' ? 'bg-neon-500 text-black shadow-[0_0_15px_rgba(255,255,255,0.4)]' : 'text-gray-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 md:px-6 md:py-2 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${state.currentTab === 'editor' ? 'bg-neon-500 text-black shadow-[0_0_15px_rgba(255,255,255,0.4)]' : 'text-gray-400 hover:text-white'}`}
               >
                   Studio
               </button>
               <button 
                   onClick={() => setState(prev => ({...prev, currentTab: 'personas'}))}
-                  className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${state.currentTab === 'personas' ? 'bg-neon-500 text-black shadow-[0_0_15px_rgba(255,255,255,0.4)]' : 'text-gray-400 hover:text-white'}`}
+                  className={`px-3 py-1.5 md:px-6 md:py-2 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${state.currentTab === 'personas' ? 'bg-neon-500 text-black shadow-[0_0_15px_rgba(255,255,255,0.4)]' : 'text-gray-400 hover:text-white'}`}
               >
                   Treinar Modelo
               </button>
           </div>
 
-          <div className="flex items-center gap-6 text-xs font-mono">
+          <div className="flex items-center gap-2 md:gap-6 text-[10px] md:text-xs font-mono">
              {!hasApiKey ? (
                   <button onClick={handleSelectKey} className="text-neon-500 animate-pulse font-bold tracking-widest">
                       [ INSERT_KEY ]
@@ -811,16 +811,16 @@ const App: React.FC = () => {
                 <div id="workspace" className="w-full">
                 
                 {state.statusMessage && (
-                <div className={`fixed top-24 right-10 px-6 py-4 rounded-sm border-l-4 flex items-center gap-4 transition-all duration-300 z-50 shadow-2xl backdrop-blur-xl animate-fade-in ${state.statusMessage.type === 'error' ? 'bg-black/90 border-red-500 text-red-400' : 'bg-black/90 border-neon-500 text-neon-400'}`}>
+                <div className={`fixed top-24 right-4 left-4 sm:left-auto md:right-10 px-6 py-4 rounded-sm border-l-4 flex items-center gap-4 transition-all duration-300 z-[150] shadow-2xl backdrop-blur-xl animate-fade-in ${state.statusMessage.type === 'error' ? 'bg-black/90 border-red-500 text-red-400' : 'bg-black/90 border-neon-500 text-neon-400'}`}>
                     <i className={`fas ${state.statusMessage.type === 'error' ? 'fa-exclamation-triangle' : 'fa-check-square'}`}></i>
                     <span className="text-xs font-mono uppercase">{state.statusMessage.text}</span>
                 </div>
                 )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 md:gap-8">
                 
                     {/* LEFT PANEL - CONFIGURATION 1 */}
-                    <div className="lg:col-span-3 flex flex-col gap-6 lg:order-1">
+                    <div className="lg:col-span-3 md:col-span-1 flex flex-col gap-6 lg:order-1 order-1">
                         <div className="glass-panel p-6 relative overflow-hidden h-full">
                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gray-500 to-electric-500 opacity-50"></div>
 
@@ -1045,7 +1045,7 @@ const App: React.FC = () => {
                     </div>
 
                     {/* RIGHT PANEL - CONFIGURATION 2 */}
-                    <div className="lg:col-span-3 flex flex-col gap-6 lg:order-3">
+                    <div className="lg:col-span-3 md:col-span-1 flex flex-col gap-6 lg:order-3 order-2">
                         <div className="glass-panel p-6 relative overflow-hidden h-full">
                             <div className="flex items-center justify-between mb-8">
                                 <h3 className="text-xs font-bold text-white uppercase tracking-widest">
@@ -1219,7 +1219,7 @@ const App: React.FC = () => {
                     </div>
 
                     {/* CENTER PANEL - RESULTS */}
-                    <div className="lg:col-span-6 lg:order-2">
+                    <div className="lg:col-span-6 md:col-span-2 lg:order-2 order-3">
                         <div className="glass-panel h-full min-h-[600px] flex flex-col relative">
                             
                             {/* Header */}
@@ -1238,7 +1238,7 @@ const App: React.FC = () => {
                             </div>
 
                             {/* Content */}
-                            <div className="flex-grow bg-black/40 relative flex items-center justify-center p-8 overflow-y-auto">
+                            <div className="flex-grow bg-black/40 relative flex items-center justify-center p-4 md:p-8 overflow-y-auto">
                             
                             <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '40px 40px'}}></div>
 
@@ -1303,7 +1303,7 @@ const App: React.FC = () => {
             {state.currentTab === 'personas' && renderPersonasTab()}
 
             {/* History Floating Sidebar */}
-            <div className={`fixed right-0 top-0 bottom-0 w-80 bg-black/95 backdrop-blur-md border-l border-white/10 transition-transform duration-300 z-50 shadow-2xl ${state.isHistoryOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className={`fixed right-0 top-0 bottom-0 w-[85vw] max-w-[320px] bg-black/95 backdrop-blur-md border-l border-white/10 transition-transform duration-300 z-[120] shadow-2xl ${state.isHistoryOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                 <div className="p-6 border-b border-white/10 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <h3 className="text-xs font-bold text-white uppercase tracking-widest">LOGS</h3>
