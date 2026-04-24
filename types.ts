@@ -35,7 +35,17 @@ export interface SubjectImage {
     description?: string;
 }
 
+export interface Persona {
+  id: string;
+  name: string;
+  images: string[];
+}
+
 export interface AppState {
+  currentTab: 'editor' | 'personas';
+  personas: Persona[];
+  selectedPersonaId: string | null;
+
   // New Dynamic Input System
   mainIdea: string; // Ideia simples do usuário (Cenário/Ação)
   referenceImages: ReferenceImage[]; // Lista dinâmica de imagens (Estilo)

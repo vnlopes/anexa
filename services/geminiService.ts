@@ -147,22 +147,24 @@ export const analyzeAndGeneratePrompt = async (
 
       ESQUELETO OBRIGATÓRIO DO PROMPT (Preencha os colchetes [...] com detalhes):
       
-      "Gere uma imagem dessa(a) pessoa/objeto(pessoa/objeto da foto fornecida).
+      "Gere uma imagem hiper-realista deste sujeito exato. A IDENTIDADE DEVE SER 100% IDÊNTICA À FOTO FORNECIDA. 
+      O sujeito é [DESCRIÇÃO ANATÔMICA MINUCIOSA DA FOTO FORNECIDA: etnia, idade aparente, formato do rosto, estrutura do maxilar e maçãs do rosto, formato exato dos olhos, cor dos olhos, formato do nariz, formato e espessura dos lábios, sobrancelhas, tipo/cor/corte de cabelo, tom de pele exato, marcas distintivas como pintas ou cicatrizes].
+      
+      Preserve fielmente a expressão facial, o ângulo da cabeça e os traços originais da pessoa/produto da foto, incluindo logotipos em roupas, marcas e detalhes.
 
-      Preserve fielmente os traços faciais originais da pessoa/produto da foto, incluindo logotipos em roupas, marcas em produtos e detalhes de design do sujeito.
-
-      O cenário é [...]. A fotografia mostra os detalhes do seu rosto, póros, marcas faciais, pelos, expressões faciais, microtexturas naturais, imperfeições realistas, estruturas, etc. A iluminação é [...], hiper realista, as sombras são [...]. Imagem 8K, rica em detalhes, fotografia cinematográfica.
+      O cenário é [...]. A fotografia mostra os detalhes anatômicos exatos do seu rosto, poros, marcas faciais, pelos, microtexturas naturais da pele, imperfeições realistas, estruturas. A iluminação é [...], as sombras são [...]. Imagem 8K, rica em detalhes, fotografia cinematográfica.
 
       Orientação: [...]"
 
       PASSO A PASSO:
-      1. ANÁLISE VISUAL PROFUNDA: Antes de escrever o prompt, analise as referências. Qual é a iluminação? (Suave, dura, neon, natural). Quais são as cores dominantes? Qual é o estilo artístico? (3D, foto, pintura, colagem).
+      0. ANÁLISE FACIAL EXTREMA (CRÍTICO): Seu objetivo principal é CLONAR VISUALMENTE o sujeito da foto modelo. Antes de construir o prompt, mapeie mentalmente toda a biometria facial do sujeito (etnia, formato exato do rosto, nariz, olhos, boca, cabelo). Você DEVE injetar essas características explícitas no esqueleto acima para garantir semelhança absoluta.
+      1. ANÁLISE VISUAL PROFUNDA: Antes de escrever o prompt, analise as referências para o cenário/estilo. Qual é a iluminação? Quais são as cores dominantes? Qual é o estilo artístico?
       2. Se "keepText" for FALSE, o "image_prompt" DEVE conter "no graphic design text, no typography, clean background, textless" ao final da Orientação. Retorne "text_layers": []. IMPORTANTE: Isso se refere a textos de design/composição, NÃO a logotipos em roupas ou produtos que fazem parte do sujeito.
       3. Se "keepText" for TRUE, o "image_prompt" DEVE INCLUIR O TEXTO DE DESIGN/COMPOSIÇÃO. Descreva onde o texto deve aparecer, qual a fonte, cor e o conteúdo exato. Tente replicar o estilo da referência.
       4. O "image_prompt" deve seguir o ESQUELETO acima. Preencha os [...] com descrições ricas baseadas nas referências e na ideia do usuário.
       5. IMPORTANTE: Se "keepText" for FALSE, NÃO GERE TEXTO NA IMAGEM. O prompt deve garantir que a imagem seja limpa.
       6. POSICIONAMENTO DO SUJEITO: O usuário escolheu posicionar o sujeito principal em: "${subjectPosition.toUpperCase()}". O prompt deve refletir isso explicitamente na Orientação.
-      7. CRÍTICO: Se houver uma foto de sujeito (pessoa), o prompt DEVE instruir explicitamente a preservação da identidade, EXPRESSÃO FACIAL e POSIÇÃO DA CABEÇA da foto original, a menos que o usuário tenha pedido para mudar.
+      7. CRÍTICO (FIDELIDADE ABSOLUTA): Se houver uma foto de sujeito (pessoa), o prompt DEVE instruir a IA geradora a atuar como um "clone biométrico". A identidade da pessoa (traços anatômicos, cor da pele, formato do crânio, olhos, nariz) DEVE ser descrita minuciosamente no prompt para garantir preservação total da fisionomia.
       8. REFERÊNCIAS VISUAIS: Se houver referências, o sujeito DEVE ser inserido NESTE CONTEXTO/CENÁRIO. A referência dita a iluminação, o fundo, a composição e o estilo. O sujeito (da foto do modelo) é o "ator" que entra neste "palco" (da referência).
       9. SUJEITOS MÚLTIPLOS: Se houver múltiplos sujeitos, cada um tem sua própria descrição abaixo. Respeite as características individuais de cada um.
       10. ENQUADRAMENTO: O usuário selecionou o enquadramento: "${photoSettings.framing}". O prompt DEVE refletir isso explicitamente na descrição da composição e distância da câmera.
@@ -228,7 +230,7 @@ export const analyzeAndGeneratePrompt = async (
       const imgPart = getImagePart(sub.base64);
       if (imgPart) {
           const desc = sub.description ? `DESCRIÇÃO DO USUÁRIO: "${sub.description}"` : "Sem descrição extra.";
-          systemPrompt += `\n[FOTO DO MODELO ${index+1}]: ${desc}. Use para entender a identidade do sujeito. IMPORTANTE: A EXPRESSÃO FACIAL, O ÂNGULO DA CABEÇA E AS CARACTERÍSTICAS FÍSICAS DESTA FOTO DEVEM SER MANTIDAS NO RESULTADO FINAL, a menos que a descrição do usuário peça explicitamente para mudar.\n`;
+          systemPrompt += `\n[FOTO DO MODELO ${index+1}]: ${desc}. OBJETIVO CRÍTICO: Faça uma Análise Biométrica Extrema deste rosto/corpo e inclua os traços exatos no image_prompt. A EXPRESSÃO FACIAL, O ÂNGULO DA CABEÇA E AS CARACTERÍSTICAS FÍSICAS EXATAS DESTA FOTO DEVEM SER DESCRITAS NO PROMPT PARA SEREM MANTIDAS NO RESULTADO FINAL.\n`;
           parts.push(imgPart);
       }
   });

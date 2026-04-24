@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Dropzone from './components/Dropzone';
 import { analyzeAndGeneratePrompt, generateImage, generateVariations } from './services/geminiService';
-import { AppState, HistoryItem, ReferenceImage, SubjectImage, TextLayerData } from './types';
+import { AppState, HistoryItem, ReferenceImage, SubjectImage, TextLayerData, Persona } from './types';
+import { getHistoryFromDB, saveHistoryItemToDB, getPersonasFromDB, savePersonaToDB, deletePersonaFromDB, clearHistoryDB } from './services/dbService';
 
 // Subject Details Options
 const SUBJECT_OPTIONS = [
@@ -129,6 +130,10 @@ const PHOTO_OPTIONS = [
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState & { lastGeneratedTextLayers: TextLayerData[] }>({
+    currentTab: 'editor',
+    personas: [],
+    selectedPersonaId: null,
+    
     mainIdea: "",
     referenceImages: [], 
     
@@ -139,7 +144,7 @@ const App: React.FC = () => {
     subjectPosition: 'center',
 
     keepText: false,
-    aspectRatio: "1:1",
+    aspectRatio: "4:5",
     imageCount: 1,
     colorMode: "original",
     color1: "#ffffff",
@@ -183,7 +188,22 @@ const App: React.FC = () => {
 
   useEffect(() => {
     checkApiKey();
+    loadCacheData();
   }, []);
+
+  const loadCacheData = async () => {
+    try {
+      const dbHistory = await getHistoryFromDB();
+      const dbPersonas = await getPersonasFromDB();
+      setState(prev => ({
+        ...prev,
+        history: dbHistory.sort((a, b) => b.timestamp - a.timestamp),
+        personas: dbPersonas
+      }));
+    } catch (e) {
+      console.error('Error loading db', e);
+    }
+  };
 
   const checkApiKey = async () => {
      const aistudio = (window as any).aistudio;
@@ -243,9 +263,13 @@ const App: React.FC = () => {
       prompt,
       textLayers: textLayers || []
     }));
+    
+    // Save each to DB
+    newItems.forEach(item => saveHistoryItemToDB(item));
+
     setState(prev => ({
       ...prev,
-      history: [...newItems, ...prev.history].slice(0, 30)
+      history: [...newItems, ...prev.history].slice(0, 50)
     }));
   };
 
@@ -314,11 +338,23 @@ const App: React.FC = () => {
 
 
   const handleGenerate = async () => {
+    let finalSubjectImages = [...state.subjectImages];
+    if (state.selectedPersonaId) {
+        const persona = state.personas.find(p => p.id === state.selectedPersonaId);
+        if (persona) {
+            finalSubjectImages = persona.images.map((img, i) => ({
+                id: crypto.randomUUID(),
+                base64: img,
+                description: i === 0 ? "Foto principal do Preset." : "Ângulo do Preset."
+            }));
+        }
+    }
+
     // Check if at least one subject image exists OR user wrote an idea
-    const hasSubject = state.subjectImages.some(img => img.base64 !== null);
+    const hasSubject = finalSubjectImages.some(img => img.base64 !== null);
     
     if (!state.mainIdea && !hasSubject) {
-      showStatus('error', 'Descreva uma ideia ou adicione um sujeito.');
+      showStatus('error', 'Descreva uma ideia ou adicione um sujeito (ou selecione um preset).');
       return;
     }
     if (!hasApiKey && (window as any).aistudio) {
@@ -341,7 +377,7 @@ const App: React.FC = () => {
       const { prompt, textLayers } = await analyzeAndGeneratePrompt(
         state.mainIdea,
         state.subjectType,
-        state.subjectImages,
+        finalSubjectImages,
         state.subjectDescription,
         state.subjectPosition,
         state.referenceImages,
@@ -382,7 +418,7 @@ const App: React.FC = () => {
          try {
              const img = await generateImage(
                  prompt,
-                 state.subjectImages,
+                 finalSubjectImages,
                  state.referenceImages, 
                  state.aspectRatio,
                  state.selectedModel
@@ -491,6 +527,137 @@ const App: React.FC = () => {
       });
   };
 
+  const handleAddPersonaImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (!files) return;
+
+      Array.from(files).forEach(file => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+              const base64 = event.target?.result as string;
+              setNewPersonaImages(prev => [...prev, base64]);
+          };
+          reader.readAsDataURL(file);
+      });
+  };
+
+  const [newPersonaName, setNewPersonaName] = useState("");
+  const [newPersonaImages, setNewPersonaImages] = useState<string[]>([]);
+
+  const handleSavePersona = () => {
+      if (!newPersonaName.trim()) {
+          showStatus('error', 'Dê um nome ao modelo.');
+          return;
+      }
+      if (newPersonaImages.length === 0) {
+          showStatus('error', 'Adicione pelo menos uma imagem.');
+          return;
+      }
+
+      const persona: Persona = {
+          id: crypto.randomUUID(),
+          name: newPersonaName.trim(),
+          images: newPersonaImages
+      };
+
+      savePersonaToDB(persona);
+      setState(prev => ({
+          ...prev,
+          personas: [...prev.personas, persona],
+          currentTab: 'editor'
+      }));
+      setNewPersonaName("");
+      setNewPersonaImages([]);
+      showStatus('success', 'Modelo salvo com sucesso!');
+  };
+
+  const removeNewPersonaImage = (index: number) => {
+      setNewPersonaImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const renderPersonasTab = () => (
+      <div className="max-w-[1000px] mx-auto px-4 py-12">
+          <h2 className="text-3xl font-bold text-white mb-2">Treinar Novo Modelo</h2>
+          <p className="text-gray-400 mb-8 text-sm">Adicione imagens do rosto de uma pessoa em diferentes ângulos para que a IA possa preservá-la em futuras gerações.</p>
+
+          <div className="space-y-6">
+              <div className="glass-panel p-6 rounded-sm border border-white/5">
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2 block">Nome do Modelo</label>
+                  <input
+                      type="text"
+                      className="w-full bg-black/50 border border-white/10 rounded-sm p-3 text-white focus:outline-none focus:border-neon-500 font-mono text-sm"
+                      placeholder="Ex: João Silva"
+                      value={newPersonaName}
+                      onChange={(e) => setNewPersonaName(e.target.value)}
+                  />
+              </div>
+
+              <div className="glass-panel p-6 rounded-sm border border-white/5">
+                  <div className="flex items-center justify-between mb-4">
+                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold block">Imagens de Treinamento</label>
+                      <span className="text-[9px] uppercase tracking-widest text-neon-500 bg-neon-500/10 px-2 py-1 rounded-sm">Recomendado: 6 ângulos diferentes</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      {newPersonaImages.map((img, i) => (
+                          <div key={i} className="relative aspect-square border border-white/10 group rounded-sm overflow-hidden bg-black/50">
+                              <img src={img} className="w-full h-full object-cover opacity-80" />
+                              <button onClick={() => removeNewPersonaImage(i)} className="absolute top-2 right-2 w-6 h-6 bg-red-500/80 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs">
+                                  <i className="fas fa-times"></i>
+                              </button>
+                          </div>
+                      ))}
+                      <div className="aspect-square border border-dashed border-white/20 rounded-sm flex flex-col items-center justify-center text-gray-500 hover:text-white hover:border-neon-500 transition-colors relative bg-black/20 cursor-pointer">
+                          <input type="file" multiple accept="image/*" onChange={handleAddPersonaImages} className="opacity-0 absolute inset-0 cursor-pointer" />
+                          <i className="fas fa-plus mb-2"></i>
+                          <span className="text-[10px] uppercase tracking-widest font-bold">Adicionar</span>
+                      </div>
+                  </div>
+              </div>
+
+              <div className="flex justify-end pt-4">
+                  <button onClick={handleSavePersona} className="bg-neon-500 text-black px-8 py-3 text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-neon-400 transition-colors shadow-[0_0_20px_rgba(226,231,131,0.2)]">
+                      Salvar Modelo
+                  </button>
+              </div>
+          </div>
+          
+          {state.personas.length > 0 && (
+              <div className="mt-16">
+                  <h3 className="text-xl font-bold text-white mb-6 border-b border-white/5 pb-4">Modelos Salvos</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {state.personas.map(persona => (
+                          <div key={persona.id} className="glass-panel p-4 border border-white/5 rounded-sm relative group flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-full overflow-hidden border border-white/10 bg-black">
+                                  {persona.images[0] && <img src={persona.images[0]} className="w-full h-full object-cover" />}
+                              </div>
+                              <div className="flex-1">
+                                  <h4 className="text-sm font-bold text-white">{persona.name}</h4>
+                                  <span className="text-[10px] text-gray-500 font-mono">{persona.images.length} imagens</span>
+                              </div>
+                              <button onClick={() => {
+                                  deletePersonaFromDB(persona.id);
+                                  setState(prev => ({...prev, personas: prev.personas.filter(p => p.id !== persona.id)}));
+                              }} className="text-red-500/50 hover:text-red-500 transition-colors">
+                                  <i className="fas fa-trash"></i>
+                              </button>
+                          </div>
+                      ))}
+                  </div>
+              </div>
+          )}
+      </div>
+  );
+
+  const handleSelectPersona = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const id = e.target.value;
+      if (!id) {
+          setState(prev => ({ ...prev, selectedPersonaId: null }));
+          return;
+      }
+      setState(prev => ({ ...prev, selectedPersonaId: id }));
+  };
+
   // --- RENDER ---
   return (
     <div className="min-h-screen flex flex-col selection:bg-neon-500/30 selection:text-white bg-background text-gray-200 overflow-x-hidden relative">
@@ -581,8 +748,19 @@ const App: React.FC = () => {
           </div>
 
           {/* Center Navigation */}
-          <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/10 opacity-0 pointer-events-none">
-              {/* Home button removed */}
+          <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/10">
+              <button 
+                  onClick={() => setState(prev => ({...prev, currentTab: 'editor'}))}
+                  className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${state.currentTab === 'editor' ? 'bg-neon-500 text-black shadow-[0_0_15px_rgba(226,231,131,0.4)]' : 'text-gray-400 hover:text-white'}`}
+              >
+                  Studio
+              </button>
+              <button 
+                  onClick={() => setState(prev => ({...prev, currentTab: 'personas'}))}
+                  className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${state.currentTab === 'personas' ? 'bg-neon-500 text-black shadow-[0_0_15px_rgba(226,231,131,0.4)]' : 'text-gray-400 hover:text-white'}`}
+              >
+                  Treinar Modelo
+              </button>
           </div>
 
           <div className="flex items-center gap-6 text-xs font-mono">
@@ -611,7 +789,8 @@ const App: React.FC = () => {
       {/* --- MAIN LAYOUT --- */}
       <div className="flex-1 overflow-y-auto z-10 custom-scrollbar relative">
             
-            {/* --- HERO SECTION --- */}
+            <div style={{ display: state.currentTab === 'editor' ? 'block' : 'none' }}>
+                {/* --- HERO SECTION --- */}
             <header className="relative w-full pt-20 pb-12 text-center px-4 overflow-hidden">
                 <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full border border-white/5 bg-white/5 mb-8 backdrop-blur-md">
                     <span className="w-1.5 h-1.5 rounded-full bg-neon-500 animate-pulse"></span>
@@ -696,9 +875,11 @@ const App: React.FC = () => {
                                         <div className="w-1 h-3 bg-electric-500"></div>
                                         <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Sujeito Principal (Opcional)</p>
                                     </div>
-                                    <button onClick={addSubjectImage} className="text-[9px] uppercase font-bold text-electric-400 hover:text-white transition-colors border border-electric-500/30 px-2 py-1 hover:bg-electric-500/10">
-                                        <i className="fas fa-plus mr-1"></i> Adicionar Foto
-                                    </button>
+                                    {!state.selectedPersonaId && (
+                                        <button onClick={addSubjectImage} className="text-[9px] uppercase font-bold text-electric-400 hover:text-white transition-colors border border-electric-500/30 px-2 py-1 hover:bg-electric-500/10">
+                                            <i className="fas fa-plus mr-1"></i> Adicionar Foto
+                                        </button>
+                                    )}
                                 </div>
 
                                 {/* Subject Position Toggle */}
@@ -753,36 +934,65 @@ const App: React.FC = () => {
                                     </button>
                                 </div>
                                 
-                                {state.subjectImages.length === 0 && (
-                                    <div className="text-center p-3 border border-dashed border-white/10 rounded-sm mb-2">
+                                {state.personas.length > 0 && state.subjectType.includes('person') && (
+                                    <div className="mb-4">
+                                        <p className="text-[9px] uppercase font-bold text-neon-500 mb-2 tracking-widest flex items-center gap-2">
+                                            <i className="fas fa-magic"></i> Modelos Treinados
+                                        </p>
+                                        <select 
+                                            value={state.selectedPersonaId || ""}
+                                            onChange={handleSelectPersona}
+                                            className="w-full bg-black/40 border border-neon-500/30 text-[10px] text-white p-2 rounded-sm focus:outline-none focus:border-neon-500"
+                                        >
+                                            <option value="">-- Sem Preset / Criar Novo --</option>
+                                            {state.personas.map(p => (
+                                                <option key={p.id} value={p.id}>{p.name} ({p.images.length} fotos)</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+                                
+                                {state.subjectImages.length === 0 && !state.selectedPersonaId && (
+                                    <div className="text-center p-3 border border-dashed border-white/10 rounded-sm mb-2 mt-4">
                                         <p className="text-[9px] text-gray-600">Sem sujeitos. A IA criará uma pessoa/objeto genérico.</p>
                                     </div>
                                 )}
 
-                                <div className="space-y-2 mb-2">
-                                    {state.subjectImages.map((img, index) => (
-                                        <div key={img.id} className="relative group">
-                                             <button onClick={() => removeSubjectImage(img.id)} className="absolute top-1 right-1 bg-black/50 text-white w-5 h-5 flex items-center justify-center rounded-full hover:bg-red-500 transition-colors z-10 text-[10px]">
-                                                <i className="fas fa-times"></i>
-                                            </button>
-                                            <Dropzone 
-                                                id={`sub-${img.id}`} 
-                                                label={`${getLabel()} #${index + 1}`} 
-                                                icon={getIcon()}
-                                                heightClass="h-32" 
-                                                image={img.base64} 
-                                                onImageChange={(val) => updateSubjectImage(img.id, 'base64', val)} 
-                                            />
-                                            <input 
-                                                type="text" 
-                                                placeholder="Detalhes deste sujeito..." 
-                                                value={img.description || ""} 
-                                                onChange={(e) => updateSubjectImage(img.id, 'description', e.target.value)}
-                                                className="w-full mt-1 bg-black/40 border border-white/10 text-[10px] text-gray-300 p-2 focus:outline-none focus:border-electric-500/50"
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
+                                {!state.selectedPersonaId && (
+                                    <div className="space-y-2 mb-2 mt-4">
+                                        {state.subjectImages.map((img, index) => (
+                                            <div key={img.id} className="relative group">
+                                                 <button onClick={() => removeSubjectImage(img.id)} className="absolute top-1 right-1 bg-black/50 text-white w-5 h-5 flex items-center justify-center rounded-full hover:bg-red-500 transition-colors z-10 text-[10px]">
+                                                    <i className="fas fa-times"></i>
+                                                </button>
+                                                <Dropzone 
+                                                    id={`sub-${img.id}`} 
+                                                    label={`${getLabel()} #${index + 1}`} 
+                                                    icon={getIcon()}
+                                                    heightClass="h-32" 
+                                                    image={img.base64} 
+                                                    onImageChange={(val) => updateSubjectImage(img.id, 'base64', val)} 
+                                                />
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Detalhes deste sujeito..." 
+                                                    value={img.description || ""} 
+                                                    onChange={(e) => updateSubjectImage(img.id, 'description', e.target.value)}
+                                                    className="w-full mt-1 bg-black/40 border border-white/10 text-[10px] text-gray-300 p-2 focus:outline-none focus:border-electric-500/50"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                
+                                {state.selectedPersonaId && (
+                                    <div className="text-center p-5 border border-neon-500/20 bg-neon-500/5 rounded-sm mt-4">
+                                        <i className="fas fa-user-check text-neon-500 text-2xl mb-2 flex items-center justify-center"></i>
+                                        <p className="text-xs text-white font-bold">{state.personas.find(p => p.id === state.selectedPersonaId)?.name}</p>
+                                        <p className="text-[9px] text-neon-500/70 mt-1 uppercase tracking-widest font-mono">Preset Selecionado</p>
+                                        <p className="text-[8px] text-gray-400 mt-2">({state.personas.find(p => p.id === state.selectedPersonaId)?.images.length} imagens treinadas internamente)</p>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Dynamic References */}
@@ -1075,11 +1285,25 @@ const App: React.FC = () => {
                     </div>
                 </div>
             </div>
+            </div>
+            
+            {state.currentTab === 'personas' && renderPersonasTab()}
 
             {/* History Floating Sidebar */}
             <div className={`fixed right-0 top-0 bottom-0 w-80 bg-black/95 backdrop-blur-md border-l border-white/10 transition-transform duration-300 z-50 shadow-2xl ${state.isHistoryOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                 <div className="p-6 border-b border-white/10 flex justify-between items-center">
-                    <h3 className="text-xs font-bold text-white uppercase tracking-widest">LOGS</h3>
+                    <div className="flex items-center gap-3">
+                        <h3 className="text-xs font-bold text-white uppercase tracking-widest">LOGS</h3>
+                        {state.history.length > 0 && (
+                            <button onClick={() => {
+                                clearHistoryDB();
+                                setState(prev => ({...prev, history: []}));
+                                showStatus('success', 'Histórico apagado com sucesso.');
+                            }} className="text-[9px] uppercase tracking-widest text-red-500 hover:text-red-400 font-bold border border-red-500/30 px-2 py-1 rounded-sm">
+                                Limpar
+                            </button>
+                        )}
+                    </div>
                     <button onClick={() => setState(prev => ({...prev, isHistoryOpen: false}))} className="text-gray-500 hover:text-neon-500 transition-colors"><i className="fas fa-times"></i></button>
                 </div>
                 <div className="p-4 space-y-4 overflow-y-auto h-[calc(100%-70px)] custom-scrollbar">
