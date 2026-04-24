@@ -44,7 +44,7 @@ export interface Persona {
 export interface AppState {
   currentTab: 'editor' | 'personas';
   personas: Persona[];
-  selectedPersonaId: string | null;
+  selectedPersonaIds: string[];
 
   // New Dynamic Input System
   mainIdea: string; // Ideia simples do usuário (Cenário/Ação)

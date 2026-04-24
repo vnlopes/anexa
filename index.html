@@ -16,23 +16,42 @@
             theme: {
                 extend: {
                     colors: {
-                        background: '#020202', // Pure Black
-                        surface: '#080808', // Off Black
+                        background: '#050505',
+                        surface: 'rgba(24, 24, 27, 0.3)',
+                        surfaceHover: 'rgba(255, 255, 255, 0.05)',
+                        borderSubtle: 'rgba(255, 255, 255, 0.1)',
+                        borderFocus: 'rgba(255, 255, 255, 0.2)',
+                        textPrimary: '#ffffff',
+                        textSecondary: '#a1a1aa',
                         neon: {
-                            400: '#eff3a3',
-                            500: '#E2E783', // The Requested Green
-                            600: '#cace50',
+                            400: '#f4f4f5',
+                            500: '#ffffff',
+                            600: '#e4e4e7',
                         },
                         electric: {
                             400: '#406aff',
-                            500: '#0236C5', // The Requested Blue
+                            500: '#0236C5',
                             600: '#002080',
                             900: '#000d33'
                         }
                     },
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
                         mono: ['Fira Code', 'monospace'],
+                    },
+                    spacing: {
+                        'sm': '8px',
+                        'md': '16px',
+                        'lg': '24px',
+                        'xl': '32px',
+                        'xxl': '40px'
+                    },
+                    borderRadius: {
+                        'sm': '8px',
+                        'md': '16px',
+                        'lg': '24px',
+                        'xl': '32px',
+                        'pill': '9999px'
                     },
                     animation: {
                         'spin-slow': 'spin 12s linear infinite',
@@ -51,8 +70,8 @@
                             '50%': { transform: 'translateY(-10px)' },
                         },
                         glow: {
-                            'from': { boxShadow: '0 0 10px -10px #E2E783' },
-                            'to': { boxShadow: '0 0 20px 5px rgba(226, 231, 131, 0.2)' }
+                            'from': { boxShadow: '0 0 10px -10px #ffffff' },
+                            'to': { boxShadow: '0 0 20px 5px rgba(255, 255, 255, 0.2)' }
                         }
                     }
                 }
@@ -60,12 +79,11 @@
         }
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400&family=Anton&family=Bebas+Neue&family=Dancing+Script&family=Lato:wght@300;400;700&family=Lobster&family=Merriweather:wght@300;400;700&family=Montserrat:wght@300;400;700&family=Noto+Sans:wght@300;400;700&family=Nunito:wght@300;400;700&family=Open+Sans:wght@300;400;700&family=Oswald:wght@300;400;700&family=Pacifico&family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;700&family=Raleway:wght@300;400;700&family=Roboto+Condensed:wght@300;400;700&family=Roboto:wght@300;400;700&family=Rubik:wght@300;400;700&family=Ubuntu:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         body { 
-            font-family: 'Inter', sans-serif;
-            background-color: #020202;
-            color: #e2e8f0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #050505;
+            color: #ffffff;
             overflow-x: hidden;
         }
         
@@ -73,45 +91,47 @@
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
-        ::-webkit-scrollbar-thumb:hover { background: #E2E783; }
+        ::-webkit-scrollbar-thumb:hover { background: #0236C5; }
 
         /* Ultra-Modern Glassmorphism */
         .glass-panel {
-            background: rgba(10, 10, 10, 0.4);
+            background: rgba(24, 24, 27, 0.3);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+            border-radius: 24px;
         }
 
         /* Subtle Input Styling */
         .glass-input {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            transition: all 1000ms cubic-bezier(0.44, 0, 0.56, 1);
         }
         .glass-input:focus {
-            background: rgba(2, 54, 197, 0.1);
-            border-color: #E2E783;
-            box-shadow: 0 0 15px rgba(226, 231, 131, 0.1);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
         }
 
         /* Radial Gradients (Backdrops) */
         .radial-glow-neon {
-            background: radial-gradient(circle, rgba(226, 231, 131, 0.15) 0%, rgba(0,0,0,0) 60%);
+            background: radial-gradient(circle, rgba(2, 54, 197, 0.05) 0%, rgba(0,0,0,0) 60%);
         }
         .radial-glow-electric {
-            background: radial-gradient(circle, rgba(2, 54, 197, 0.25) 0%, rgba(0,0,0,0) 60%);
+            background: radial-gradient(circle, rgba(2, 54, 197, 0.1) 0%, rgba(0,0,0,0) 60%);
         }
 
         .text-gradient-main {
-            background: linear-gradient(90deg, #ffffff 0%, #E2E783 100%);
+            background: linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
         
         .text-gradient-blue {
-            background: linear-gradient(135deg, #E2E783 0%, #0236C5 100%);
+            background: linear-gradient(135deg, #a1a1aa 0%, #0236C5 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -120,6 +140,8 @@
         .btn-hover-effect {
             position: relative;
             overflow: hidden;
+            border-radius: 9999px;
+            transition: all 1000ms cubic-bezier(0.44, 0, 0.56, 1);
         }
         .btn-hover-effect::after {
             content: '';
@@ -129,10 +151,19 @@
             width: 100%;
             height: 100%;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transition: 0.5s;
+            transition: 1000ms cubic-bezier(0.44, 0, 0.56, 1);
         }
         .btn-hover-effect:hover::after {
             left: 100%;
+        }
+
+        @keyframes scrollRight {
+            0% { transform: translateX(-50%); }
+            100% { transform: translateX(0); }
+        }
+        @keyframes scrollLeft {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
         }
     </style>
 <script type="importmap">

@@ -132,7 +132,7 @@ const App: React.FC = () => {
   const [state, setState] = useState<AppState & { lastGeneratedTextLayers: TextLayerData[] }>({
     currentTab: 'editor',
     personas: [],
-    selectedPersonaId: null,
+    selectedPersonaIds: [],
     
     mainIdea: "",
     referenceImages: [], 
@@ -339,16 +339,19 @@ const App: React.FC = () => {
 
   const handleGenerate = async () => {
     let finalSubjectImages = [...state.subjectImages];
-    if (state.selectedPersonaId) {
-        const persona = state.personas.find(p => p.id === state.selectedPersonaId);
+    const validPersonaIds = state.selectedPersonaIds.filter(id => id !== "");
+    
+    validPersonaIds.forEach((id) => {
+        const persona = state.personas.find(p => p.id === id);
         if (persona) {
-            finalSubjectImages = persona.images.map((img, i) => ({
+            const presetImages: SubjectImage[] = persona.images.map((img, i) => ({
                 id: crypto.randomUUID(),
                 base64: img,
-                description: i === 0 ? "Foto principal do Preset." : "Ângulo do Preset."
+                description: i === 0 ? `Foto principal do Preset: ${persona.name}.` : `Ângulo do Preset: ${persona.name}.`
             }));
+            finalSubjectImages = [...finalSubjectImages, ...presetImages];
         }
-    }
+    });
 
     // Check if at least one subject image exists OR user wrote an idea
     const hasSubject = finalSubjectImages.some(img => img.base64 !== null);
@@ -543,6 +546,7 @@ const App: React.FC = () => {
 
   const [newPersonaName, setNewPersonaName] = useState("");
   const [newPersonaImages, setNewPersonaImages] = useState<string[]>([]);
+  const [editingPersonaId, setEditingPersonaId] = useState<string | null>(null);
 
   const handleSavePersona = () => {
       if (!newPersonaName.trim()) {
@@ -555,19 +559,25 @@ const App: React.FC = () => {
       }
 
       const persona: Persona = {
-          id: crypto.randomUUID(),
+          id: editingPersonaId || crypto.randomUUID(),
           name: newPersonaName.trim(),
           images: newPersonaImages
       };
 
       savePersonaToDB(persona);
-      setState(prev => ({
-          ...prev,
-          personas: [...prev.personas, persona],
-          currentTab: 'editor'
-      }));
+      setState(prev => {
+          const newPersonas = editingPersonaId 
+              ? prev.personas.map(p => p.id === editingPersonaId ? persona : p)
+              : [...prev.personas, persona];
+          return {
+              ...prev,
+              personas: newPersonas,
+              currentTab: 'editor'
+          };
+      });
       setNewPersonaName("");
       setNewPersonaImages([]);
+      setEditingPersonaId(null);
       showStatus('success', 'Modelo salvo com sucesso!');
   };
 
@@ -615,9 +625,18 @@ const App: React.FC = () => {
                   </div>
               </div>
 
-              <div className="flex justify-end pt-4">
-                  <button onClick={handleSavePersona} className="bg-neon-500 text-black px-8 py-3 text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-neon-400 transition-colors shadow-[0_0_20px_rgba(226,231,131,0.2)]">
-                      Salvar Modelo
+              <div className="flex justify-end pt-4 gap-4">
+                  {editingPersonaId && (
+                      <button onClick={() => {
+                          setEditingPersonaId(null);
+                          setNewPersonaName("");
+                          setNewPersonaImages([]);
+                      }} className="bg-transparent text-gray-400 border border-white/20 px-8 py-3 text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-white/5 transition-colors">
+                          Cancelar
+                      </button>
+                  )}
+                  <button onClick={handleSavePersona} className="bg-neon-500 text-black px-8 py-3 text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-neon-400 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+                      {editingPersonaId ? 'Atualizar Modelo' : 'Salvar Modelo'}
                   </button>
               </div>
           </div>
@@ -635,12 +654,22 @@ const App: React.FC = () => {
                                   <h4 className="text-sm font-bold text-white">{persona.name}</h4>
                                   <span className="text-[10px] text-gray-500 font-mono">{persona.images.length} imagens</span>
                               </div>
-                              <button onClick={() => {
-                                  deletePersonaFromDB(persona.id);
-                                  setState(prev => ({...prev, personas: prev.personas.filter(p => p.id !== persona.id)}));
-                              }} className="text-red-500/50 hover:text-red-500 transition-colors">
-                                  <i className="fas fa-trash"></i>
-                              </button>
+                              <div className="flex items-center gap-2">
+                                  <button onClick={() => {
+                                      setEditingPersonaId(persona.id);
+                                      setNewPersonaName(persona.name);
+                                      setNewPersonaImages(persona.images);
+                                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                                  }} className="text-blue-500/50 hover:text-blue-500 transition-colors">
+                                      <i className="fas fa-edit"></i>
+                                  </button>
+                                  <button onClick={() => {
+                                      deletePersonaFromDB(persona.id);
+                                      setState(prev => ({...prev, personas: prev.personas.filter(p => p.id !== persona.id)}));
+                                  }} className="text-red-500/50 hover:text-red-500 transition-colors">
+                                      <i className="fas fa-trash"></i>
+                                  </button>
+                              </div>
                           </div>
                       ))}
                   </div>
@@ -648,15 +677,6 @@ const App: React.FC = () => {
           )}
       </div>
   );
-
-  const handleSelectPersona = (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const id = e.target.value;
-      if (!id) {
-          setState(prev => ({ ...prev, selectedPersonaId: null }));
-          return;
-      }
-      setState(prev => ({ ...prev, selectedPersonaId: id }));
-  };
 
   // --- RENDER ---
   return (
@@ -726,22 +746,19 @@ const App: React.FC = () => {
       <nav className="border-b border-white/5 bg-background/80 backdrop-blur-md sticky top-0 z-50 h-16 w-full">
         <div className="max-w-[1400px] mx-auto px-6 h-full flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <svg width="40" viewBox="0 0 657 462" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M647.64 185.93C658.941 189.25 660.354 204.686 649.843 210.003L155.69 459.993C141.564 467.139 129.352 447.612 141.961 438.039L412.294 232.792C420.64 226.455 418.443 213.354 408.487 210.086L140.737 122.215C129.731 118.603 119.853 130.105 125.086 140.44L137.942 165.832C145.2 180.167 125.101 192.335 115.764 179.258L2.47371 20.5886C-4.70405 10.5357 4.86682 -2.92036 16.7182 0.561658L647.64 185.93Z" fill="url(#paint0_linear_573_26)"/>
-<path d="M647.64 185.93C658.941 189.25 660.354 204.686 649.843 210.003L155.69 459.993C141.564 467.139 129.352 447.612 141.961 438.039L412.294 232.792C420.64 226.455 418.443 213.354 408.487 210.086L140.737 122.215C129.731 118.603 119.853 130.105 125.086 140.44L137.942 165.832C145.2 180.167 125.101 192.335 115.764 179.258L2.47371 20.5886C-4.70405 10.5357 4.86682 -2.92036 16.7182 0.561658L647.64 185.93Z" fill="url(#paint1_radial_573_26)"/>
+<svg width="27" viewBox="0 0 315 535" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M157.5 201.496H314.503V382.941L157.003 534.496V383.423L0 534.5V151.555L157.5 0V201.496Z" fill="white"/>
+<path d="M157.5 201.496H314.503V382.941L157.003 534.496V383.423L0 534.5V151.555L157.5 0V201.496Z" fill="url(#paint0_radial_1008_68)"/>
 <defs>
-<linearGradient id="paint0_linear_573_26" x1="212.337" y1="-31.3238" x2="901.305" y2="215.731" gradientUnits="userSpaceOnUse">
-<stop stopColor="#0236C5"/>
-<stop offset="1" stopColor="#011A5F"/>
-</linearGradient>
-<radialGradient id="paint1_radial_573_26" cx="0" cy="0" r="1" gradientTransform="matrix(1457.74 -908.718 62.2982 2067.16 -536.637 776.684)" gradientUnits="userSpaceOnUse">
-<stop offset="0.0948243" stopColor="#000801"/>
-<stop offset="0.337489" stopColor="#001652"/>
-<stop offset="0.576717" stopColor="#0236C5"/>
-<stop offset="1" stopColor="#7DA0FF"/>
+<radialGradient id="paint0_radial_1008_68" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(315 428.5) rotate(-121.983) scale(544.68 471.568)">
+<stop stopColor="#7DA0FF"/>
+<stop offset="0.423283" stopColor="#0236C5"/>
+<stop offset="0.662511" stopColor="#001652"/>
+<stop offset="0.905176" stopColor="#000801"/>
 </radialGradient>
 </defs>
 </svg>
+
             <h1 className="text-3xl font-sans font-normal text-white">
               anexa
             </h1>
@@ -751,13 +768,13 @@ const App: React.FC = () => {
           <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/10">
               <button 
                   onClick={() => setState(prev => ({...prev, currentTab: 'editor'}))}
-                  className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${state.currentTab === 'editor' ? 'bg-neon-500 text-black shadow-[0_0_15px_rgba(226,231,131,0.4)]' : 'text-gray-400 hover:text-white'}`}
+                  className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${state.currentTab === 'editor' ? 'bg-neon-500 text-black shadow-[0_0_15px_rgba(255,255,255,0.4)]' : 'text-gray-400 hover:text-white'}`}
               >
                   Studio
               </button>
               <button 
                   onClick={() => setState(prev => ({...prev, currentTab: 'personas'}))}
-                  className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${state.currentTab === 'personas' ? 'bg-neon-500 text-black shadow-[0_0_15px_rgba(226,231,131,0.4)]' : 'text-gray-400 hover:text-white'}`}
+                  className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${state.currentTab === 'personas' ? 'bg-neon-500 text-black shadow-[0_0_15px_rgba(255,255,255,0.4)]' : 'text-gray-400 hover:text-white'}`}
               >
                   Treinar Modelo
               </button>
@@ -789,32 +806,9 @@ const App: React.FC = () => {
       {/* --- MAIN LAYOUT --- */}
       <div className="flex-1 overflow-y-auto z-10 custom-scrollbar relative">
             
-            <div style={{ display: state.currentTab === 'editor' ? 'block' : 'none' }}>
-                {/* --- HERO SECTION --- */}
-            <header className="relative w-full pt-20 pb-12 text-center px-4 overflow-hidden">
-                <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full border border-white/5 bg-white/5 mb-8 backdrop-blur-md">
-                    <span className="w-1.5 h-1.5 rounded-full bg-neon-500 animate-pulse"></span>
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-gray-400">Sistema Online v3.3</span>
-                </div>
-                
-                <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight text-white animate-fade-in leading-tight">
-                    O futuro <span className="text-gradient-main">do Design</span><br />
-                    <span className="text-gradient-blue">Começa aqui!</span>
-                </h1>
-                
-                <p className="text-gray-500 max-w-xl mx-auto text-sm mb-10 animate-fade-in leading-relaxed font-light">
-                    Otimização visual via IA generativa. Escreva uma ideia simples ou use referências visuais para criar imagens de alta fidelidade.
-                </p>
-                
-                <div className="flex justify-center gap-6 animate-fade-in">
-                    <button onClick={() => document.getElementById('workspace')?.scrollIntoView({behavior: 'smooth'})} className="btn-hover-effect bg-white text-black px-10 py-4 rounded-sm font-bold text-xs uppercase tracking-widest hover:bg-neon-500 transition-colors">
-                        Iniciar Sistema
-                    </button>
-                </div>
-            </header>
-
-            {/* --- WORKSPACE --- */}
-            <div id="workspace" className="max-w-[1400px] mx-auto px-4 md:px-8 pb-20">
+            <div style={{ display: state.currentTab === 'editor' ? 'block' : 'none' }} className="pt-8 w-full max-w-[100%] mx-auto px-4 md:px-8 pb-20">
+                {/* --- WORKSPACE --- */}
+                <div id="workspace" className="w-full">
                 
                 {state.statusMessage && (
                 <div className={`fixed top-24 right-10 px-6 py-4 rounded-sm border-l-4 flex items-center gap-4 transition-all duration-300 z-50 shadow-2xl backdrop-blur-xl animate-fade-in ${state.statusMessage.type === 'error' ? 'bg-black/90 border-red-500 text-red-400' : 'bg-black/90 border-neon-500 text-neon-400'}`}>
@@ -825,10 +819,10 @@ const App: React.FC = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 
-                    {/* LEFT PANEL - CONFIGURATION */}
-                    <div className="lg:col-span-4 flex flex-col gap-6">
-                        <div className="glass-panel p-6 relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon-500 to-electric-500 opacity-50"></div>
+                    {/* LEFT PANEL - CONFIGURATION 1 */}
+                    <div className="lg:col-span-3 flex flex-col gap-6 lg:order-1">
+                        <div className="glass-panel p-6 relative overflow-hidden h-full">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gray-500 to-electric-500 opacity-50"></div>
 
                             <div className="flex items-center justify-between mb-8">
                                 <h3 className="text-xs font-bold text-white uppercase tracking-widest">
@@ -875,11 +869,9 @@ const App: React.FC = () => {
                                         <div className="w-1 h-3 bg-electric-500"></div>
                                         <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Sujeito Principal (Opcional)</p>
                                     </div>
-                                    {!state.selectedPersonaId && (
-                                        <button onClick={addSubjectImage} className="text-[9px] uppercase font-bold text-electric-400 hover:text-white transition-colors border border-electric-500/30 px-2 py-1 hover:bg-electric-500/10">
-                                            <i className="fas fa-plus mr-1"></i> Adicionar Foto
-                                        </button>
-                                    )}
+                                    <button onClick={addSubjectImage} className="text-[9px] uppercase font-bold text-electric-400 hover:text-white transition-colors border border-electric-500/30 px-2 py-1 hover:bg-electric-500/10">
+                                        <i className="fas fa-plus mr-1"></i> Adicionar Foto
+                                    </button>
                                 </div>
 
                                 {/* Subject Position Toggle */}
@@ -939,60 +931,71 @@ const App: React.FC = () => {
                                         <p className="text-[9px] uppercase font-bold text-neon-500 mb-2 tracking-widest flex items-center gap-2">
                                             <i className="fas fa-magic"></i> Modelos Treinados
                                         </p>
-                                        <select 
-                                            value={state.selectedPersonaId || ""}
-                                            onChange={handleSelectPersona}
-                                            className="w-full bg-black/40 border border-neon-500/30 text-[10px] text-white p-2 rounded-sm focus:outline-none focus:border-neon-500"
-                                        >
-                                            <option value="">-- Sem Preset / Criar Novo --</option>
-                                            {state.personas.map(p => (
-                                                <option key={p.id} value={p.id}>{p.name} ({p.images.length} fotos)</option>
-                                            ))}
-                                        </select>
+                                        
+                                        {state.selectedPersonaIds.map((id, index) => (
+                                            <div key={index} className="flex items-center gap-2 mb-2">
+                                                <select 
+                                                    value={id}
+                                                    onChange={(e) => {
+                                                        const newIds = [...state.selectedPersonaIds];
+                                                        newIds[index] = e.target.value;
+                                                        setState(prev => ({...prev, selectedPersonaIds: newIds}));
+                                                    }}
+                                                    className="w-full bg-black/40 border border-neon-500/30 text-[10px] text-white p-2 rounded-sm focus:outline-none focus:border-neon-500"
+                                                >
+                                                    <option value="">Selecione um Preset...</option>
+                                                    {state.personas.map(p => (
+                                                        <option key={p.id} value={p.id}>{p.name} ({p.images.length} fotos)</option>
+                                                    ))}
+                                                </select>
+                                                <button onClick={() => {
+                                                    const newIds = [...state.selectedPersonaIds];
+                                                    newIds.splice(index, 1);
+                                                    setState(prev => ({...prev, selectedPersonaIds: newIds}));
+                                                }} className="text-red-500/50 hover:text-red-500 transition-colors">
+                                                    <i className="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        ))}
+
+                                        <button onClick={() => {
+                                            setState(prev => ({...prev, selectedPersonaIds: [...prev.selectedPersonaIds, ""]}));
+                                        }} className="text-[9px] uppercase font-bold text-neon-500 hover:text-white transition-colors border border-neon-500/30 px-2 py-1 mt-1 hover:bg-neon-500/10">
+                                            <i className="fas fa-plus mr-1"></i> Adicionar Preset
+                                        </button>
                                     </div>
                                 )}
                                 
-                                {state.subjectImages.length === 0 && !state.selectedPersonaId && (
+                                {state.subjectImages.length === 0 && state.selectedPersonaIds.filter(id => id).length === 0 && (
                                     <div className="text-center p-3 border border-dashed border-white/10 rounded-sm mb-2 mt-4">
                                         <p className="text-[9px] text-gray-600">Sem sujeitos. A IA criará uma pessoa/objeto genérico.</p>
                                     </div>
                                 )}
 
-                                {!state.selectedPersonaId && (
-                                    <div className="space-y-2 mb-2 mt-4">
-                                        {state.subjectImages.map((img, index) => (
-                                            <div key={img.id} className="relative group">
-                                                 <button onClick={() => removeSubjectImage(img.id)} className="absolute top-1 right-1 bg-black/50 text-white w-5 h-5 flex items-center justify-center rounded-full hover:bg-red-500 transition-colors z-10 text-[10px]">
-                                                    <i className="fas fa-times"></i>
-                                                </button>
-                                                <Dropzone 
-                                                    id={`sub-${img.id}`} 
-                                                    label={`${getLabel()} #${index + 1}`} 
-                                                    icon={getIcon()}
-                                                    heightClass="h-32" 
-                                                    image={img.base64} 
-                                                    onImageChange={(val) => updateSubjectImage(img.id, 'base64', val)} 
-                                                />
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Detalhes deste sujeito..." 
-                                                    value={img.description || ""} 
-                                                    onChange={(e) => updateSubjectImage(img.id, 'description', e.target.value)}
-                                                    className="w-full mt-1 bg-black/40 border border-white/10 text-[10px] text-gray-300 p-2 focus:outline-none focus:border-electric-500/50"
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                                
-                                {state.selectedPersonaId && (
-                                    <div className="text-center p-5 border border-neon-500/20 bg-neon-500/5 rounded-sm mt-4">
-                                        <i className="fas fa-user-check text-neon-500 text-2xl mb-2 flex items-center justify-center"></i>
-                                        <p className="text-xs text-white font-bold">{state.personas.find(p => p.id === state.selectedPersonaId)?.name}</p>
-                                        <p className="text-[9px] text-neon-500/70 mt-1 uppercase tracking-widest font-mono">Preset Selecionado</p>
-                                        <p className="text-[8px] text-gray-400 mt-2">({state.personas.find(p => p.id === state.selectedPersonaId)?.images.length} imagens treinadas internamente)</p>
-                                    </div>
-                                )}
+                                <div className="space-y-2 mb-2 mt-4">
+                                    {state.subjectImages.map((img, index) => (
+                                        <div key={img.id} className="relative group">
+                                                <button onClick={() => removeSubjectImage(img.id)} className="absolute top-1 right-1 bg-black/50 text-white w-5 h-5 flex items-center justify-center rounded-full hover:bg-red-500 transition-colors z-10 text-[10px]">
+                                                <i className="fas fa-times"></i>
+                                            </button>
+                                            <Dropzone 
+                                                id={`sub-${img.id}`} 
+                                                label={`${getLabel()} #${index + 1}`} 
+                                                icon={getIcon()}
+                                                heightClass="h-32" 
+                                                image={img.base64} 
+                                                onImageChange={(val) => updateSubjectImage(img.id, 'base64', val)} 
+                                            />
+                                            <input 
+                                                type="text" 
+                                                placeholder="Detalhes deste sujeito..." 
+                                                value={img.description || ""} 
+                                                onChange={(e) => updateSubjectImage(img.id, 'description', e.target.value)}
+                                                className="w-full mt-1 bg-black/40 border border-white/10 text-[10px] text-gray-300 p-2 focus:outline-none focus:border-electric-500/50"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
 
                             {/* Dynamic References */}
@@ -1038,15 +1041,25 @@ const App: React.FC = () => {
                                     </div>
                                 ))}
                             </div>
+                        </div>
+                    </div>
 
-                            <div className="w-full h-px bg-white/5 my-8"></div>
+                    {/* RIGHT PANEL - CONFIGURATION 2 */}
+                    <div className="lg:col-span-3 flex flex-col gap-6 lg:order-3">
+                        <div className="glass-panel p-6 relative overflow-hidden h-full">
+                            <div className="flex items-center justify-between mb-8">
+                                <h3 className="text-xs font-bold text-white uppercase tracking-widest">
+                                    // Ajustes Finos
+                                </h3>
+                                <i className="fas fa-sliders-h text-gray-600"></i>
+                            </div>
 
                             {/* Controls */}
                             <div className="space-y-6">
                                 {/* Text Toggle */}
                                 <div className="flex items-center justify-between group cursor-pointer" onClick={() => setState(prev => ({...prev, keepText: !prev.keepText}))}>
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-3 h-3 rounded-full transition-colors ${state.keepText ? 'bg-neon-500 shadow-[0_0_10px_#E2E783]' : 'bg-gray-700'}`}></div>
+                                        <div className={`w-3 h-3 rounded-full transition-colors ${state.keepText ? 'bg-neon-500 shadow-[0_0_10px_#ffffff]' : 'bg-gray-700'}`}></div>
                                         <span className="text-xs font-medium text-gray-300 group-hover:text-white uppercase tracking-wide">Preservar Texto (Se houver)</span>
                                     </div>
                                     <span className="text-[10px] font-mono text-gray-600">{state.keepText ? 'ON' : 'OFF'}</span>
@@ -1193,7 +1206,7 @@ const App: React.FC = () => {
                             </div>
 
                             <div className="flex gap-2 mt-6">
-                                <button onClick={handleGenerate} disabled={state.isProcessing || !hasApiKey} className="flex-1 bg-gradient-to-r from-neon-500 to-electric-500 hover:from-white hover:to-white hover:text-black disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold py-4 shadow-[0_0_20px_rgba(226,231,131,0.3)] flex justify-center items-center gap-2 text-xs uppercase tracking-widest transition-all transform active:scale-95">
+                                <button onClick={handleGenerate} disabled={state.isProcessing || !hasApiKey} className="flex-1 bg-gradient-to-r from-neon-500 to-electric-500 hover:from-white hover:to-white hover:text-black disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold py-4 shadow-[0_0_20px_rgba(255,255,255,0.3)] flex justify-center items-center gap-2 text-xs uppercase tracking-widest transition-all transform active:scale-95">
                                     {state.isProcessing ? <><i className="fas fa-sync fa-spin"></i> Processando</> : <span>Gerar Visual <i className="fas fa-bolt ml-1"></i></span>}
                                 </button>
                                 {state.isProcessing && (
@@ -1205,8 +1218,8 @@ const App: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* RIGHT PANEL - RESULTS */}
-                    <div className="lg:col-span-8">
+                    {/* CENTER PANEL - RESULTS */}
+                    <div className="lg:col-span-6 lg:order-2">
                         <div className="glass-panel h-full min-h-[600px] flex flex-col relative">
                             
                             {/* Header */}
@@ -1243,7 +1256,7 @@ const App: React.FC = () => {
 
                             {state.isProcessing && (
                                 <div className="text-center relative z-10">
-                                    <div className="w-16 h-16 border-2 border-white/10 border-t-neon-500 rounded-full animate-spin mx-auto mb-6 shadow-[0_0_30px_rgba(226,231,131,0.2)]"></div>
+                                    <div className="w-16 h-16 border-2 border-white/10 border-t-neon-500 rounded-full animate-spin mx-auto mb-6 shadow-[0_0_30px_rgba(255,255,255,0.2)]"></div>
                                     <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-2 animate-pulse">{state.loadingStep}</h3>
                                     <div className="w-64 h-1 bg-gray-800 mx-auto rounded-full overflow-hidden">
                                         <div className="h-full bg-neon-500 transition-all duration-500 ease-out" style={{width: `${state.loadingProgress}%`}}></div>

@@ -71,7 +71,7 @@ const Dropzone: React.FC<DropzoneProps> = ({
             rounded-none
             ${image 
                 ? 'border-neon-500/40 bg-black' 
-                : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-neon-500/30 hover:shadow-[0_0_20px_rgba(226,231,131,0.05)]'
+                : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-neon-500/30 hover:shadow-[0_0_20px_rgba(255,255,255,0.05)]'
             }
         `}
         onClick={() => fileInputRef.current?.click()}
