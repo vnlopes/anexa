@@ -746,7 +746,7 @@ const App: React.FC = () => {
       <nav className="border-b border-white/5 bg-background/80 backdrop-blur-md sticky top-0 z-50 h-16 w-full">
         <div className="max-w-[1400px] mx-auto px-6 h-full flex items-center justify-between">
           <div className="flex items-center gap-3">
-<svg width="27" viewBox="0 0 315 535" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="20" viewBox="0 0 315 535" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M157.5 201.496H314.503V382.941L157.003 534.496V383.423L0 534.5V151.555L157.5 0V201.496Z" fill="white"/>
 <path d="M157.5 201.496H314.503V382.941L157.003 534.496V383.423L0 534.5V151.555L157.5 0V201.496Z" fill="url(#paint0_radial_1008_68)"/>
 <defs>
