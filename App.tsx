@@ -680,7 +680,7 @@ const App: React.FC = () => {
 
   // --- RENDER ---
   return (
-    <div className="min-h-screen flex flex-col selection:bg-neon-500/30 selection:text-white bg-background text-gray-200 overflow-x-hidden relative">
+    <div className="h-screen w-full flex flex-col selection:bg-neon-500/30 selection:text-white bg-background text-gray-200 overflow-hidden relative">
       
       {/* API Key Modal Overlay */}
       {showApiInput && (
@@ -743,7 +743,7 @@ const App: React.FC = () => {
       )}
 
       {/* --- NAVBAR --- */}
-      <nav className="border-b border-white/5 bg-background/80 backdrop-blur-md sticky top-0 z-50 h-16 w-full">
+      <nav className="border-b border-white/5 bg-background/80 backdrop-blur-md sticky top-0 z-50 h-16 w-full flex-shrink-0">
         <div className="max-w-[1400px] mx-auto px-6 h-full flex items-center justify-between">
           <div className="flex items-center gap-3">
 <svg width="20" viewBox="0 0 315 535" fill="none" xmlns="http://www.w3.org/2000/svg">
