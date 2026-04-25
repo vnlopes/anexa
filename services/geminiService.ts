@@ -115,56 +115,58 @@ export const analyzeAndGeneratePrompt = async (
       ATUAÇÃO: Você é um Engenheiro de Prompt de IA Visionária e Especialista em OCR/Tipografia.
       
       OBJETIVO:
-      1. Analisar as referências visuais e extrair QUALQUER texto presente com precisão cirúrgica (posição, fonte, cor, efeitos).
-      2. Criar um prompt para gerar a imagem SEM O TEXTO (apenas o fundo/sujeito limpo).
-      3. Retornar um JSON estruturado com o prompt da imagem e os dados das camadas de texto separadamente.
-      4. FIDELIDADE EXTREMA ÀS REFERÊNCIAS: Se houver referências de estilo, o "image_prompt" deve descrever MINUCIOSAMENTE a iluminação, paleta de cores, composição e "vibe" dessas referências. Use termos técnicos de fotografia e arte para garantir que o resultado final seja visualmente idêntico ao estilo das referências.
+      1. Extrair os detalhes da imagem de referência de forma impecável, gerando um JSON perfeitamente detalhado e minucioso, descrevendo o cenário, o sujeito, o estilo e TUDO que for possível para que o resultado fique IGUALZINHO à referência.
+      2. IMPORTANTE SOBRE TEXTOS: As imagens geradas NÃO devem ter "textos sobrepostos" (overlay texts) em pós-produção. Os ÚNICOS textos permitidos são aqueles que compõem os objetos físicos na cena (logotipos, escritos em camisas, faixadas, outdoors, etc.). 
+      3. Sendo assim, o array "text_layers" DEVE retornar SEMPRE VAZIO ([]). TODO e QUALQUER TEXTO deve ser minuciosamente descrito *dentro* do "image_prompt_json" para ser gerado organicamente pela IA.
+      4. Retornar um JSON estruturado com o "image_prompt_json" extremamente fiel descrevendo a iluminação, paleta de cores, e composição da referência.
 
       FONTS DISPONÍVEIS (Google Fonts):
       ${GOOGLE_FONTS.join(', ')}
 
       FORMATO DE RESPOSTA (JSON OBRIGATÓRIO):
       {
-        "image_prompt": "Prompt detalhado seguindo ESTRITAMENTE o esqueleto abaixo.",
-        "text_layers": [
-          {
-            "text": "Texto exato encontrado",
-            "x": 50, // Posição X em porcentagem (0-100)
-            "y": 50, // Posição Y em porcentagem (0-100)
-            "fontSize": 24, // Tamanho estimado (referência base 1080px)
-            "fontFamily": "Roboto", // ESCOLHA A FONTE MAIS PARECIDA DA LISTA ACIMA
-            "color": "#ffffff", // Cor Hex
-            "fontWeight": "bold", // normal, bold, 100-900
-            "fontStyle": "normal", // normal, italic
-            "letterSpacing": 0, // em pixels
-            "textTransform": "uppercase", // none, uppercase, lowercase
-            "align": "center", // left, center, right
-            "textShadow": "2px 2px 4px rgba(0,0,0,0.5)" // Se houver sombra, brilho ou contorno, descreva em CSS text-shadow válido. Ex: '0 0 10px #ff00de' (neon), '2px 2px 0 #000' (hard shadow). Se não houver, use null.
-          }
-        ]
+        "image_prompt_json": {
+          "composicao_visual": {
+            "estilo": "...",
+            "paleta_de_cores": ["..."],
+            "iluminação": { "tipo": "...", "direcao": "...", "efeitos": "..." }
+          },
+          "elemento_central": {
+            "sujeito": "...",
+            "caracteristicas_faciais": { "expressao": "...", "detalhes": "...", "acessorios": ["..."] },
+            "integracao_cenica": "..."
+          },
+          "elementos_de_escala_e_detalhes": {
+            "personagens_secundarios": { "descricao": "...", "vestuario": "...", "atividades": ["..."] },
+            "veiculos_e_objetos": ["..."]
+          },
+          "ambiente_background": {
+            "primeiro_plano": "...",
+            "meio_plano": "...",
+            "plano_fundo": "..."
+          },
+          "texturas_detalhadas": { "gelo_ou_materiais_principais": "...", "atmosfera": "..." },
+          "descricao_do_sujeito": "Descreva a fisionomia do sujeito da imagem de forma perfeitamente detalhada, citando formato ósseo, marcas, cabelo, sobrancelha. (APENAS DESCRIÇÃO VISUAL)."
+        },
+        "text_layers": [] // SEMPRE RETORNE VAZIO.
       }
 
-      ESQUELETO OBRIGATÓRIO DO PROMPT (Preencha os colchetes [...] com detalhes):
-      
-      "Gere uma imagem hiper-realista da PESSOA EXATA fornecida na imagem de modelo. NÃO MUDE ABSOLUTAMENTE NADA NO ROSTO DELA. 
-      [EVITE DESCREVER A FISIONOMIA COM MUITAS PALAVRAS PARA NÃO CONFUNDIR A IA]. Apenas instrua fortemente: A IDENTIDADE, PROPORÇÕES, LINHAS FACIAIS, PINTAS, E ESTRUTURA ÓSSEA DEVEM SER UMA CÓPIA PERFEITA E INTACTA DA FOTO FORNECIDA COMO SUJEITO.
-      
-      [REGRA DE VESTUÁRIO (ESTRITAMENTE OBRIGATÓRIA)]: Se houver uma imagem de referência, o sujeito DEVE usar EXATAMENTE A MESMA ROUPA da pessoa na imagem de referência. Descreva detalhadamente o tecido, cor, corte e TUDO que houver nela (logotipos, ícones, escritos, estampas, números) e instrua a geração a manter essas roupas idênticas na nova imagem. A ideia é manter o corpo/roupa da referência, mas com o "rosto" / "cabeça" do sujeito fornecido (modelo).
-      
-      [REGRA DE IDENTIDADE E EXPRESSÃO FACIAL (MUITO IMPORTANTE)]: Crie uma RÉPLICA BIOMÉTRICA EXATA do rosto do sujeito. É OBRIGATÓRIO preservar a pessoa exatamente como ela é. ALÉM DISSO, a EXPRESSÃO FACIAL DEVE SER IDÊNTICA À DA FOTO DO SUJEITO (posição da boca, tensão no olhar) a menos que o usuário tenha exigido uma expressão diferente através das configurações. O ângulo e traços originais são intocáveis.
+      ESQUELETO DO OBJETO JSON 'image_prompt_json':
+      - Mapeie TODA a composição visual, elementos centrais, personagens secundários, ambiente e texturas (exatamente como no formato json fornecido por instrução e preenchendo todos os atributos aplicáveis).
+      - Na chave descricao_do_sujeito: Descreva a fisionomia com extrema precisão. (Não use textos conversacionais ou ordens diretas para a IA, apenas descreva visualmente).
+      - A ideia é manter a essência da referência (roupa, cenário, luz) substituindo APENAS o sujeito pelo sujeito do usuário.
+      - NÃO adicione textos no design a não ser que sejam textos orgânicos gravados em camisas, crachás ou estruturas do fundo.
 
-      O cenário é [SE HOUVER REFERÊNCIA: COPIAR EXATAMENTE O CENÁRIO E COMPOSIÇÃO DA REFERÊNCIA, COLOCANDO O SUJEITO NO LUGAR DO ORIGINAL. SE NÃO HOUVER REFERÊNCIA: DESCREVER UM CENÁRIO ÉPICO, MONUMENTAL E RICO DETALHADO BASEADO NA IDEIA DO USUÁRIO]. A fotografia mostra texturas realistas. A iluminação é [DESCREVER EXATAMENTE A LUZ DA REFERÊNCIA OU LUZ CINEMATOGRÁFICA DRAMÁTICA], as sombras são [...]. O estilo da imagem é [COPIAR ESTILO DA REFERÊNCIA OU HIPER-REALISTA]. Imagem 8K, rica em detalhes.
-
-      Orientação: [...]"
 
       PASSO A PASSO:
-      0. ANÁLISE FACIAL EXTREMA (CRÍTICO): Seu objetivo principal é garantir que a imagem gerada seja IDÊNTICA à foto fornecida. A identidade visual, traços do rosto, sobrancelhas, olhos, nariz, boca, marcas e o vestuário devem ser copiados fielmente da imagem do modelo original. NÃO ADICIONE TRAÇOS QUE NÃO EXISTEM NA FOTO. A identidade deve ser uma cópia 100% perfeita.
-      1. LEITURA PROFUNDA DA REFERÊNCIA (SE HOUVER REFERÊNCIA VISUAL): Examine a imagem de referência fornecida pixel por pixel. VOCÊ DEVE EXTRAIR TUDO DELA: o cenário inteiro, cada objeto de fundo, a atmosfera exata, de onde vem a luz (direction, falloff, temperatura), se a textura é filme granulado, pintura, foto de estúdio, ou render 3D, e qual a paleta de cores. O prompt final OBRIGATORIAMENTE DEVE INSTRUIR A IA A RECRIAR EXATAMENTE O MESMO MUNDO, LUZ E COMPOSIÇÃO DA REFERÊNCIA.
+      0. ANÁLISE FACIAL EXTREMA (CRÍTICO): Seu objetivo principal é garantir que a imagem gerada seja IDÊNTICA à pessoa fornecida. Você receberá uma ou múltiplas fotos do mesmo sujeito (modelo). Use TODAS as fotos para entender completamente a estrutura óssea, nariz, boca, marcas e identidade visual dessa pessoa em 360 graus. O vestuário deve ser copiado se solicitado, mas a ênfase é na clonagem anatômica do rosto.
+      0.5. POSE E ÂNGULO: Não fique preso à pose das fotos do modelo. Use o conhecimento adquirido sobre o rosto do sujeito para descrever como esse mesmo rosto deve parecer na pose, ângulo e direção de olhar exigidos pelas Configurações do Usuário ou pela Imagem de Referência de Cenário.
+      1. LEITURA PROFUNDA DA REFERÊNCIA (SE HOUVER REFERÊNCIA VISUAL): Examine a imagem de referência fornecida pixel por pixel. Você DEVE extrair a leitura perfeitamente formatando O PRÓPRIO 'image_prompt_json' detalhado minuciosamente com todos os detalhes possíveis. Mapeie TODA a composição visual, elementos centrais, personagens secundários, ambiente e texturas (exatamente como no formato json fornecido). A própria estrutura do 'image_prompt_json' é o que ditará a geração final, trazendo um resultado impecável, igualzinho à referência fornecida (mas claro, com o rosto idêntico ao sujeito/modelo fornecido).
       1.5. SOFISTICAÇÃO EXTREMA: Integre maravilhosamente todas as Configurações de Câmera e Estilo selecionadas pelo usuário no prompt final. O prompt deve ser MAGNÍFICO, extenso e riquíssimo em detalhes como: iluminação primorosa, lentes cinematográficas (e.g. 35mm, f/1.4, bokeh), atmosfera, composição e todas as minúcias.
-      2. IMPORTANTE ESSENCIAL SOBRE TEXTOS: VOCÊ DEVE PRESERVAR E DESCREVER NO PROMPT todos os logotipos, ícones, números e textos que façam parte física do sujeito (ex: escritos na camiseta, tatuagens) ou do cenário natural da referência (ex: placas de rua, letreiros físicos na parede).
-      3. IMPORTANTE: NÃO GERE TEXTO FLUTUANTE NA IMAGEM. O prompt deve garantir que a imagem não tenha sobreposições de texto inseridas em pós-edição, mantendo estritamente os textos orgânicos e reais do sujeito e cenário descritos.
+      2. IMPORTANTE ESSENCIAL SOBRE TEXTOS: VOCÊ DEVE PRESERVAR E DESCREVER DENTRO DO PROMPT DE IMAGEM todos os logotipos, ícones, números e textos que façam parte física do sujeito (ex: escritos na camiseta, tatuagens) ou do cenário natural da referência (ex: placas de rua, letreiros físicos na parede).
+      3. IMPORTANTE: RETORNE O ARRAY "text_layers" VAZIO. As imagens geradas não devem ter textos sobrepostos na frente (overlay), somente aqueles que se enquadrem nos objetos, roupas e fachadas que são gerados nativamente junto com a imagem da IA.
       4. POSICIONAMENTO DO SUJEITO: O usuário escolheu posicionar o sujeito principal em: "${subjectPosition.toUpperCase()}". O prompt deve refletir isso explicitamente na Orientação.
-      5. CRÍTICO (FIDELIDADE ABSOLUTA DA IDENTIDADE E EXPRESSÃO): O prompt DEVE exigir que a imagem use a mesma face da foto sem alterações estruturais, preservando absolutamente as proporções originais, a estrutura óssea e as linhas faciais. A exigência fundamental é ser uma CLONAGEM PERFEITA da fisionomia. Adicionalmente, preencha o prompt com O MÁXIMO DE DETALHES DE ESTILO, LUZ E CENÁRIO baseados nas configurações da câmera e imagem de referência.
+      5. CRÍTICO (FIDELIDADE ABSOLUTA DA IDENTIDADE E EXPRESSÃO): O prompt DEVE exigir que a imagem use a mesma face das fotos do modelo sem alterações estruturais, preservando absolutamente as proporções originais, a estrutura óssea e as linhas faciais a partir de qualquer ângulo. A exigência fundamental é ser uma CLONAGEM PERFEITA da fisionomia. Instrua a IA a adaptar a expressão e a pose perfeitamente para o cenário/referência ou para as configurações de olhar passadas pelo usuário, mas sem perder a semelhança da pessoa. Adicionalmente, preencha o prompt com O MÁXIMO DE DETALHES DE ESTILO, LUZ E CENÁRIO baseados nas configurações da câmera e imagem de referência.
       6. REFERÊNCIAS VISUAIS: Se houver referências, o sujeito DEVE ser inserido NESTE CONTEXTO/CENÁRIO. A referência dita a iluminação, o fundo, a composição e o estilo.
       7. PARÂMETROS DE CÂMERA E ESTILO: Você DEVE incluir explicitamente as seguintes configurações no prompt gerado (se fornecidas), expandindo-as com descrições poéticas e precisas de fotografia:
       - Enquadramento: ${photoSettings.framing || 'Padrão'} (Descreva a distância da câmera em relação ao sujeito: close-up, plano médio, plano geral, etc.)
@@ -178,7 +180,7 @@ export const analyzeAndGeneratePrompt = async (
       - Expressão Facial: ${subjectSettings.expression.length > 0 ? subjectSettings.expression.join(', ') : 'Manter original'}
       - Direção do Olhar: ${subjectSettings.gaze.length > 0 ? subjectSettings.gaze.join(', ') : 'Manter original'}
 
-      O prompt final DEVE ser rico e descritivo, traduzindo essas configurações técnicas em descrições visuais detalhadas (ex: se a lente for 85mm, descreva o fundo desfocado/bokeh; se o ângulo for Low Angle, descreva a câmera olhando de baixo para cima).
+      IMPORTANTE: As configurações de câmera e lente NÃO devem ser apenas listadas. Você DEVE traduzi-las em um parágrafo enorme, rico, descritivo e visual para o "O cenário é [...]". Por exemplo, não escreva "lente 85mm e luz dramática". Escreva "Fundo ricamente imersivo desfocado pelo forte efeito bokeh de uma lente 85mm, onde a iluminação dramática global banha um lado do rosto do sujeito em tons quentes e contrastantes, criando sombras profundas detalhadas geometricamente no lado oposto, masterizando a profundidade de campo com ray tracing...". Exagere e abuse do vocabulário fotográfico profissional para compensar a concisão da descrição fisiológica do rosto.
       
       INPUT DO USUÁRIO:
       - Ideia: "${mainIdea || 'Nenhuma'}"
@@ -227,7 +229,7 @@ export const analyzeAndGeneratePrompt = async (
       const imgPart = getImagePart(sub.base64);
       if (imgPart) {
           const desc = sub.description ? `DESCRIÇÃO DO USUÁRIO: "${sub.description}"` : "Sem descrição extra.";
-          systemPrompt += `\n[FOTO DO MODELO ${index+1}]: ${desc}. OBJETIVO CRÍTICO: Faça uma Análise Biométrica Extrema deste rosto/corpo e inclua os traços exatos no image_prompt. A EXPRESSÃO FACIAL, O ÂNGULO DA CABEÇA E AS CARACTERÍSTICAS FÍSICAS EXATAS DESTA FOTO DEVEM SER DESCRITAS NO PROMPT PARA SEREM MANTIDAS NO RESULTADO FINAL.\n`;
+          systemPrompt += `\n[FOTO DO MODELO ${index+1} (${validSubjects.length} fotos fornecidas no total)]: ${desc}. OBJETIVO CRÍTICO: Esta é uma das fotos para o "estudo do personagem". MEMORIZE a biometria, os detalhes do rosto, do cabelo e da pele a partir deste ângulo. NÃO force a imagem gerada a ter a mesma pose ou fundo desta foto. Apenas use a identidade visual para formar uma compreensão completa do sujeito.\n`;
           parts.push(imgPart);
       }
   });
@@ -236,7 +238,7 @@ export const analyzeAndGeneratePrompt = async (
   parts[0] = { text: systemPrompt };
 
   const response = await generateContentWithRetry(ai, {
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-3.1-pro-preview',
     contents: { parts: parts },
     config: { 
       responseMimeType: 'application/json'
@@ -248,9 +250,37 @@ export const analyzeAndGeneratePrompt = async (
   if (!text) throw new Error("Falha ao gerar o prompt detalhado.");
   
   try {
-      const json = JSON.parse(text);
+      let cleanedText = text.trim();
+      if (cleanedText.startsWith('```')) {
+          cleanedText = cleanedText.replace(/^```(json)?\n/, '').replace(/\n```$/, '');
+      }
+      const json = JSON.parse(cleanedText);
+      let finalPrompt = text;
+      
+      if (json.image_prompt_json) {
+          // Flatten the JSON into a descriptive text prompt for the image model
+          const props = [];
+          const flatten = (obj: any, prefix = '') => {
+             for (const key in obj) {
+                if (typeof obj[key] === 'object' && obj[key] !== null) {
+                   if (Array.isArray(obj[key])) {
+                      props.push(`${prefix}${key}: ${obj[key].join(', ')}`);
+                   } else {
+                      flatten(obj[key], `${prefix}${key} - `);
+                   }
+                } else {
+                   props.push(`${prefix}${key}: ${obj[key]}`);
+                }
+             }
+          };
+          flatten(json.image_prompt_json);
+          finalPrompt = props.join('\n');
+      } else if (typeof json.image_prompt === 'string') {
+          finalPrompt = json.image_prompt;
+      }
+      
       return {
-          prompt: typeof json.image_prompt === 'string' ? json.image_prompt : text, // Fallback to full text if image_prompt is missing
+          prompt: finalPrompt,
           textLayers: Array.isArray(json.text_layers) ? json.text_layers : []
       };
   } catch (e) {
