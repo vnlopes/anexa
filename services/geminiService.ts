@@ -88,7 +88,6 @@ export const analyzeAndGeneratePrompt = async (
   color1: string,
   color2: string,
   color3: string,
-  keepText: boolean,
   aspectRatio: string,
   photoSettings: {
       style: string;
@@ -159,19 +158,15 @@ export const analyzeAndGeneratePrompt = async (
       Orientação: [...]"
 
       PASSO A PASSO:
-      0. ANÁLISE FACIAL EXTREMA (CRÍTICO): Seu objetivo principal é garantir que a imagem gerada seja IDÊNTICA à foto fornecida. A identidade visual, traços do rosto e o vestuário devem ser copiados fielmente da imagem do modelo, NÃO CRIE UMA DESCRIÇÃO FÍSICA DETALHADA PARA NÃO CONFUNDIR A GERAÇÃO DE IMAGEM DA GOOGLE. Seja minimalista na descrição do rosto e exigente na obediência facial. TUDO O QUE IMPORTA É REFORÇAR A CÓPIA EXATA DA IMAGEM DO SUJEITO.
-      1. LEITURA PROFUNDA DA REFERÊNCIA (SE HOUVER REFERÊNCIA VISUAL): Examine a imagem de referência fornecida pixel por pixel. VOCÊ DEVE EXTRAIR TUDO DELA: o cenário inteiro, cada objeto de fundo, a atmosfera exata, de onde vem a luz (direction, falloff, temperatura), se a textura é filme granulado, pintura, foto de estúdio, ou render 3D, e qual a paleta de cores. O prompt final OBRIGATORIAMENTE DEVE INSTRUIR A IA A RECRIAR EXATAMENTE O MESMO MUNDO, LUZ E COMPOSIÇÃO DA REFERÊNCIA, MAS COM O SUJEITO DO USUÁRIO NO CENTRO.
-      1.5. SOFISTICAÇÃO EXTREMA (SE NÃO HOUVER REFERÊNCIA): Se o usuário providenciou apenas texto/ideia, transforme sua ideia básica num prompt MAGNÍFICO de 100%. Detalhe rigorosamente: o cenário envolvente, o tipo de câmera e lente (e.g. 35mm, f/1.4, bokeh), iluminação primorosa (e.g. God rays cruzando poeira no ar, neon reflections em asfalto molhado), e atmosfera. Eleve tudo a nível Masterpiece / Unreal Engine 5 / Fotografia Premiada.
-      2. Se "keepText" for FALSE, o "image_prompt" DEVE conter "no graphic design text, no typography, clean background, textless" ao final da Orientação. Retorne "text_layers": []. IMPORTANTE ESSENCIAL: Isso se refere EXCLUSIVAMENTE a textos de overaly/design/composições gráficas sobrepostas à imagem. VOCÊ DEVE PRESERVAR E DESCREVER NO PROMPT todos os logotipos, ícones, números e textos que façam parte física do sujeito (ex: escritos na camiseta, tatuagens) ou do cenário natural da referência (ex: placas de rua, letreiros físicos na parede).
-      3. Se "keepText" for TRUE, o "image_prompt" DEVE INCLUIR O TEXTO DE DESIGN/COMPOSIÇÃO. Descreva onde o texto deve aparecer, qual a fonte, cor e o conteúdo exato. Tente replicar o estilo da referência.
-      4. O "image_prompt" deve seguir o ESQUELETO acima. Preencha os [...] com descrições MÁXIMAS E PRECISAS baseadas nas orientações dos Passos 1 ou 1.5.
-      5. IMPORTANTE: Se "keepText" for FALSE, NÃO GERE TEXTO FLUTUANTE NA IMAGEM. O prompt deve garantir que a imagem não tenha sobreposições de texto inseridas em pós-edição, mantendo estritamente os textos orgânicos e reais do sujeito e cenário descritos.
-      6. POSICIONAMENTO DO SUJEITO: O usuário escolheu posicionar o sujeito principal em: "${subjectPosition.toUpperCase()}". O prompt deve refletir isso explicitamente na Orientação.
-      7. CRÍTICO (FIDELIDADE ABSOLUTA DA IDENTIDADE E EXPRESSÃO): O prompt DEVE exigir que a imagem use a mesma face da foto sem alterações estruturais, sem inventar novos traços. Se tentar descrever, apenas peça para copiar "identity from image", "copy facial expressions perfectly". A exigência fundamental é ser uma CLONAGEM PERFEITA, não uma "interpretação aproximada".
-      8. REFERÊNCIAS VISUAIS: Se houver referências, o sujeito DEVE ser inserido NESTE CONTEXTO/CENÁRIO. A referência dita a iluminação, o fundo, a composição e o estilo. O sujeito (da foto do modelo) é o "ator" que entra neste "palco" (da referência).
-      9. SUJEITOS MÚLTIPLOS: Se houver múltiplos sujeitos, cada um tem sua própria descrição abaixo. Respeite as características individuais de cada um.
-      10. ENQUADRAMENTO: O usuário selecionou o enquadramento: "${photoSettings.framing}". O prompt DEVE refletir isso explicitamente na descrição da composição e distância da câmera.
-      11. PARÂMETROS DE CÂMERA E ESTILO: Você DEVE incluir explicitamente as seguintes configurações no prompt gerado (se fornecidas):
+      0. ANÁLISE FACIAL EXTREMA (CRÍTICO): Seu objetivo principal é garantir que a imagem gerada seja IDÊNTICA à foto fornecida. A identidade visual, traços do rosto, sobrancelhas, olhos, nariz, boca, marcas e o vestuário devem ser copiados fielmente da imagem do modelo original. NÃO ADICIONE TRAÇOS QUE NÃO EXISTEM NA FOTO. A identidade deve ser uma cópia 100% perfeita.
+      1. LEITURA PROFUNDA DA REFERÊNCIA (SE HOUVER REFERÊNCIA VISUAL): Examine a imagem de referência fornecida pixel por pixel. VOCÊ DEVE EXTRAIR TUDO DELA: o cenário inteiro, cada objeto de fundo, a atmosfera exata, de onde vem a luz (direction, falloff, temperatura), se a textura é filme granulado, pintura, foto de estúdio, ou render 3D, e qual a paleta de cores. O prompt final OBRIGATORIAMENTE DEVE INSTRUIR A IA A RECRIAR EXATAMENTE O MESMO MUNDO, LUZ E COMPOSIÇÃO DA REFERÊNCIA.
+      1.5. SOFISTICAÇÃO EXTREMA: Integre maravilhosamente todas as Configurações de Câmera e Estilo selecionadas pelo usuário no prompt final. O prompt deve ser MAGNÍFICO, extenso e riquíssimo em detalhes como: iluminação primorosa, lentes cinematográficas (e.g. 35mm, f/1.4, bokeh), atmosfera, composição e todas as minúcias.
+      2. IMPORTANTE ESSENCIAL SOBRE TEXTOS: VOCÊ DEVE PRESERVAR E DESCREVER NO PROMPT todos os logotipos, ícones, números e textos que façam parte física do sujeito (ex: escritos na camiseta, tatuagens) ou do cenário natural da referência (ex: placas de rua, letreiros físicos na parede).
+      3. IMPORTANTE: NÃO GERE TEXTO FLUTUANTE NA IMAGEM. O prompt deve garantir que a imagem não tenha sobreposições de texto inseridas em pós-edição, mantendo estritamente os textos orgânicos e reais do sujeito e cenário descritos.
+      4. POSICIONAMENTO DO SUJEITO: O usuário escolheu posicionar o sujeito principal em: "${subjectPosition.toUpperCase()}". O prompt deve refletir isso explicitamente na Orientação.
+      5. CRÍTICO (FIDELIDADE ABSOLUTA DA IDENTIDADE E EXPRESSÃO): O prompt DEVE exigir que a imagem use a mesma face da foto sem alterações estruturais, preservando absolutamente as proporções originais, a estrutura óssea e as linhas faciais. A exigência fundamental é ser uma CLONAGEM PERFEITA da fisionomia. Adicionalmente, preencha o prompt com O MÁXIMO DE DETALHES DE ESTILO, LUZ E CENÁRIO baseados nas configurações da câmera e imagem de referência.
+      6. REFERÊNCIAS VISUAIS: Se houver referências, o sujeito DEVE ser inserido NESTE CONTEXTO/CENÁRIO. A referência dita a iluminação, o fundo, a composição e o estilo.
+      7. PARÂMETROS DE CÂMERA E ESTILO: Você DEVE incluir explicitamente as seguintes configurações no prompt gerado (se fornecidas), expandindo-as com descrições poéticas e precisas de fotografia:
       - Enquadramento: ${photoSettings.framing || 'Padrão'} (Descreva a distância da câmera em relação ao sujeito: close-up, plano médio, plano geral, etc.)
       - Estilo: ${photoSettings.style || 'Fotorrealista'} (SE O ESTILO FOR "Hiper-Realista", A ILUMINAÇÃO DEVE SER BRANCA E NATURAL, NUNCA USE LUZ ROXA OU NEON A MENOS QUE SOLICITADO)
       - Lente: ${photoSettings.lens || 'Padrão'}
@@ -188,7 +183,6 @@ export const analyzeAndGeneratePrompt = async (
       INPUT DO USUÁRIO:
       - Ideia: "${mainIdea || 'Nenhuma'}"
       - Posicionamento do Sujeito: ${subjectPosition}
-      - Manter Texto (keepText): ${keepText}
       - Cores: ${colorMode === 'original' ? 'Original / Natural (Se não houver referência, use cores neutras/sofisticadas)' : `${colorMode} (${color1}, ${color2}, ${color3})`}
       
       NOTA: Se o usuário não selecionou um estilo específico nas configurações, assuma "FOTOREALISTA" como padrão.

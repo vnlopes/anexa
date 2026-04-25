@@ -144,7 +144,6 @@ const App: React.FC = () => {
     subjectDescription: "",
     subjectPosition: 'center',
 
-    keepText: false,
     aspectRatio: "4:5",
     imageCount: 1,
     colorMode: "original",
@@ -389,7 +388,6 @@ const App: React.FC = () => {
         state.color1,
         state.color2,
         state.color3,
-        state.keepText,
         state.aspectRatio,
         {
             style: state.selectedStyle,
