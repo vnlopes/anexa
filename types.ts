@@ -88,7 +88,7 @@ export interface AppState {
   selectedSkinTexture: string[];
   floatingElements: string;
 
-  selectedModel: 'gemini-3-pro-image-preview' | 'gemini-2.5-flash-image';
+  selectedModel: 'gemini-3.1-flash-image-preview' | 'gemini-2.5-flash-image';
 
   error: string | null;
   statusMessage: { type: 'success' | 'error', text: string } | null;

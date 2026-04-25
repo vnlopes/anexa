@@ -3,6 +3,7 @@ import Dropzone from './components/Dropzone';
 import { analyzeAndGeneratePrompt, generateImage, generateVariations } from './services/geminiService';
 import { AppState, HistoryItem, ReferenceImage, SubjectImage, TextLayerData, Persona } from './types';
 import { getHistoryFromDB, saveHistoryItemToDB, getPersonasFromDB, savePersonaToDB, deletePersonaFromDB, clearHistoryDB } from './services/dbService';
+import { compressImage } from './imageUtils';
 
 // Subject Details Options
 const SUBJECT_OPTIONS = [
@@ -151,7 +152,7 @@ const App: React.FC = () => {
     color2: "#000000",
     color3: "#808080",
     
-    selectedModel: 'gemini-3-pro-image-preview',
+    selectedModel: 'gemini-3.1-flash-image-preview',
 
     lastGeneratedPrompt: "",
     lastGeneratedTextLayers: [],
@@ -411,26 +412,31 @@ const App: React.FC = () => {
         ...prev, 
         lastGeneratedPrompt: prompt,
         lastGeneratedTextLayers: textLayers,
-        loadingStep: `Renderizando Visual...`, 
+        loadingStep: `Renderizando Visual (Processando ${state.imageCount} simultaneamente)...`, 
         loadingProgress: 60 
       }));
 
-      const newImages: string[] = [];
+      const generationPromises = [];
       for (let i = 0; i < state.imageCount; i++) {
-         setState(prev => ({ ...prev, loadingStep: `Renderizando Visual (${i + 1}/${state.imageCount})...` }));
-         try {
-             const img = await generateImage(
-                 prompt,
-                 finalSubjectImages,
-                 state.referenceImages, 
-                 state.aspectRatio,
-                 state.selectedModel
-             );
-             newImages.push(img);
-         } catch (err) {
-             console.error(`Error generating image ${i + 1}:`, err);
-             if (i === 0) throw err; // If the first one fails, abort
-         }
+          generationPromises.push(
+              generateImage(
+                  prompt,
+                  finalSubjectImages,
+                  state.referenceImages, 
+                  state.aspectRatio,
+                  state.selectedModel
+              ).catch(err => {
+                  console.error(`Error generating image ${i + 1}:`, err);
+                  return null;
+              })
+          );
+      }
+
+      const resultsArray = await Promise.all(generationPromises);
+      const newImages = resultsArray.filter((img): img is string => img !== null);
+
+      if (newImages.length === 0 && state.imageCount > 0) {
+          throw new Error("Falha ao gerar imagens. Tente novamente.");
       }
       
       addToHistory(newImages, prompt, textLayers);
@@ -530,18 +536,25 @@ const App: React.FC = () => {
       });
   };
 
-  const handleAddPersonaImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddPersonaImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (!files) return;
 
-      Array.from(files).forEach(file => {
-          const reader = new FileReader();
-          reader.onload = (event) => {
-              const base64 = event.target?.result as string;
+      for (const file of Array.from(files)) {
+          try {
+              const base64 = await compressImage(file, 1024, 0.85);
               setNewPersonaImages(prev => [...prev, base64]);
-          };
-          reader.readAsDataURL(file);
-      });
+          } catch (error) {
+              console.error("Error compressing persona image:", error);
+              // Fallback
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                  const fallbackBase64 = event.target?.result as string;
+                  setNewPersonaImages(prev => [...prev, fallbackBase64]);
+              };
+              reader.readAsDataURL(file);
+          }
+      }
   };
 
   const [newPersonaName, setNewPersonaName] = useState("");
@@ -1056,25 +1069,16 @@ const App: React.FC = () => {
 
                             {/* Controls */}
                             <div className="space-y-6">
-                                {/* Text Toggle */}
-                                <div className="flex items-center justify-between group cursor-pointer" onClick={() => setState(prev => ({...prev, keepText: !prev.keepText}))}>
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-3 h-3 rounded-full transition-colors ${state.keepText ? 'bg-neon-500 shadow-[0_0_10px_#ffffff]' : 'bg-gray-700'}`}></div>
-                                        <span className="text-xs font-medium text-gray-300 group-hover:text-white uppercase tracking-wide">Preservar Texto (Se houver)</span>
-                                    </div>
-                                    <span className="text-[10px] font-mono text-gray-600">{state.keepText ? 'ON' : 'OFF'}</span>
-                                </div>
-
                                 {/* Model Selection */}
                                 <div className="mb-4">
                                     <p className="text-[9px] uppercase font-bold text-gray-500 mb-2 tracking-widest">Modelo de IA</p>
                                     <div className="flex flex-col gap-2">
                                         <button 
-                                            onClick={() => setState(prev => ({...prev, selectedModel: 'gemini-3-pro-image-preview'}))} 
-                                            className={`w-full py-2 px-3 text-[10px] font-mono transition-all border border-white/5 text-left flex items-center justify-between ${state.selectedModel === 'gemini-3-pro-image-preview' ? 'bg-white/10 text-white border-neon-500/30' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                                            onClick={() => setState(prev => ({...prev, selectedModel: 'gemini-3.1-flash-image-preview'}))} 
+                                            className={`w-full py-2 px-3 text-[10px] font-mono transition-all border border-white/5 text-left flex items-center justify-between ${state.selectedModel === 'gemini-3.1-flash-image-preview' ? 'bg-white/10 text-white border-neon-500/30' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                                         >
-                                            <span>Gemini 3.0 Pro Image</span>
-                                            {state.selectedModel === 'gemini-3-pro-image-preview' && <i className="fas fa-check text-neon-500"></i>}
+                                            <span>Gemini 3.1 Flash Image</span>
+                                            {state.selectedModel === 'gemini-3.1-flash-image-preview' && <i className="fas fa-check text-neon-500"></i>}
                                         </button>
                                         <button 
                                             onClick={() => setState(prev => ({...prev, selectedModel: 'gemini-2.5-flash-image'}))} 

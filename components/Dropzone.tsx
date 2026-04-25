@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { compressImage } from '../imageUtils';
 
 interface DropzoneProps {
   id: string;
@@ -24,14 +25,20 @@ const Dropzone: React.FC<DropzoneProps> = ({
     }
   };
 
-  const processFile = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        onImageChange(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
+  const processFile = async (file: File) => {
+    try {
+      const base64Str = await compressImage(file, 1024, 0.85);
+      onImageChange(base64Str);
+    } catch (error) {
+      console.error("Error compressing image, falling back:", error);
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          onImageChange(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleRemove = (e: React.MouseEvent) => {

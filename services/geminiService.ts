@@ -147,24 +147,27 @@ export const analyzeAndGeneratePrompt = async (
 
       ESQUELETO OBRIGATÓRIO DO PROMPT (Preencha os colchetes [...] com detalhes):
       
-      "Gere uma imagem hiper-realista deste sujeito exato. A IDENTIDADE DEVE SER 100% IDÊNTICA À FOTO FORNECIDA. 
-      O sujeito é [DESCRIÇÃO ANATÔMICA MINUCIOSA DA FOTO FORNECIDA: etnia, idade aparente, formato do rosto, estrutura do maxilar e maçãs do rosto, formato exato dos olhos, cor dos olhos, formato do nariz, formato e espessura dos lábios, sobrancelhas, tipo/cor/corte de cabelo, tom de pele exato, marcas distintivas como pintas ou cicatrizes].
+      "Gere uma imagem hiper-realista da PESSOA EXATA fornecida na imagem de modelo. NÃO MUDE ABSOLUTAMENTE NADA NO ROSTO DELA. 
+      [EVITE DESCREVER A FISIONOMIA COM MUITAS PALAVRAS PARA NÃO CONFUNDIR A IA]. Apenas instrua fortemente: A IDENTIDADE, PROPORÇÕES, LINHAS FACIAIS, PINTAS, E ESTRUTURA ÓSSEA DEVEM SER UMA CÓPIA PERFEITA E INTACTA DA FOTO FORNECIDA COMO SUJEITO.
       
-      Preserve fielmente a expressão facial, o ângulo da cabeça e os traços originais da pessoa/produto da foto, incluindo logotipos em roupas, marcas e detalhes.
+      [REGRA DE VESTUÁRIO (ESTRITAMENTE OBRIGATÓRIA)]: Se houver uma imagem de referência, o sujeito DEVE usar EXATAMENTE A MESMA ROUPA da pessoa na imagem de referência. Descreva detalhadamente o tecido, cor, corte e TUDO que houver nela (logotipos, ícones, escritos, estampas, números) e instrua a geração a manter essas roupas idênticas na nova imagem. A ideia é manter o corpo/roupa da referência, mas com o "rosto" / "cabeça" do sujeito fornecido (modelo).
+      
+      [REGRA DE IDENTIDADE E EXPRESSÃO FACIAL (MUITO IMPORTANTE)]: Crie uma RÉPLICA BIOMÉTRICA EXATA do rosto do sujeito. É OBRIGATÓRIO preservar a pessoa exatamente como ela é. ALÉM DISSO, a EXPRESSÃO FACIAL DEVE SER IDÊNTICA À DA FOTO DO SUJEITO (posição da boca, tensão no olhar) a menos que o usuário tenha exigido uma expressão diferente através das configurações. O ângulo e traços originais são intocáveis.
 
-      O cenário é [...]. A fotografia mostra os detalhes anatômicos exatos do seu rosto, poros, marcas faciais, pelos, microtexturas naturais da pele, imperfeições realistas, estruturas. A iluminação é [...], as sombras são [...]. Imagem 8K, rica em detalhes, fotografia cinematográfica.
+      O cenário é [SE HOUVER REFERÊNCIA: COPIAR EXATAMENTE O CENÁRIO E COMPOSIÇÃO DA REFERÊNCIA, COLOCANDO O SUJEITO NO LUGAR DO ORIGINAL. SE NÃO HOUVER REFERÊNCIA: DESCREVER UM CENÁRIO ÉPICO, MONUMENTAL E RICO DETALHADO BASEADO NA IDEIA DO USUÁRIO]. A fotografia mostra texturas realistas. A iluminação é [DESCREVER EXATAMENTE A LUZ DA REFERÊNCIA OU LUZ CINEMATOGRÁFICA DRAMÁTICA], as sombras são [...]. O estilo da imagem é [COPIAR ESTILO DA REFERÊNCIA OU HIPER-REALISTA]. Imagem 8K, rica em detalhes.
 
       Orientação: [...]"
 
       PASSO A PASSO:
-      0. ANÁLISE FACIAL EXTREMA (CRÍTICO): Seu objetivo principal é CLONAR VISUALMENTE o sujeito da foto modelo. Antes de construir o prompt, mapeie mentalmente toda a biometria facial do sujeito (etnia, formato exato do rosto, nariz, olhos, boca, cabelo). Você DEVE injetar essas características explícitas no esqueleto acima para garantir semelhança absoluta.
-      1. ANÁLISE VISUAL PROFUNDA: Antes de escrever o prompt, analise as referências para o cenário/estilo. Qual é a iluminação? Quais são as cores dominantes? Qual é o estilo artístico?
-      2. Se "keepText" for FALSE, o "image_prompt" DEVE conter "no graphic design text, no typography, clean background, textless" ao final da Orientação. Retorne "text_layers": []. IMPORTANTE: Isso se refere a textos de design/composição, NÃO a logotipos em roupas ou produtos que fazem parte do sujeito.
+      0. ANÁLISE FACIAL EXTREMA (CRÍTICO): Seu objetivo principal é garantir que a imagem gerada seja IDÊNTICA à foto fornecida. A identidade visual, traços do rosto e o vestuário devem ser copiados fielmente da imagem do modelo, NÃO CRIE UMA DESCRIÇÃO FÍSICA DETALHADA PARA NÃO CONFUNDIR A GERAÇÃO DE IMAGEM DA GOOGLE. Seja minimalista na descrição do rosto e exigente na obediência facial. TUDO O QUE IMPORTA É REFORÇAR A CÓPIA EXATA DA IMAGEM DO SUJEITO.
+      1. LEITURA PROFUNDA DA REFERÊNCIA (SE HOUVER REFERÊNCIA VISUAL): Examine a imagem de referência fornecida pixel por pixel. VOCÊ DEVE EXTRAIR TUDO DELA: o cenário inteiro, cada objeto de fundo, a atmosfera exata, de onde vem a luz (direction, falloff, temperatura), se a textura é filme granulado, pintura, foto de estúdio, ou render 3D, e qual a paleta de cores. O prompt final OBRIGATORIAMENTE DEVE INSTRUIR A IA A RECRIAR EXATAMENTE O MESMO MUNDO, LUZ E COMPOSIÇÃO DA REFERÊNCIA, MAS COM O SUJEITO DO USUÁRIO NO CENTRO.
+      1.5. SOFISTICAÇÃO EXTREMA (SE NÃO HOUVER REFERÊNCIA): Se o usuário providenciou apenas texto/ideia, transforme sua ideia básica num prompt MAGNÍFICO de 100%. Detalhe rigorosamente: o cenário envolvente, o tipo de câmera e lente (e.g. 35mm, f/1.4, bokeh), iluminação primorosa (e.g. God rays cruzando poeira no ar, neon reflections em asfalto molhado), e atmosfera. Eleve tudo a nível Masterpiece / Unreal Engine 5 / Fotografia Premiada.
+      2. Se "keepText" for FALSE, o "image_prompt" DEVE conter "no graphic design text, no typography, clean background, textless" ao final da Orientação. Retorne "text_layers": []. IMPORTANTE ESSENCIAL: Isso se refere EXCLUSIVAMENTE a textos de overaly/design/composições gráficas sobrepostas à imagem. VOCÊ DEVE PRESERVAR E DESCREVER NO PROMPT todos os logotipos, ícones, números e textos que façam parte física do sujeito (ex: escritos na camiseta, tatuagens) ou do cenário natural da referência (ex: placas de rua, letreiros físicos na parede).
       3. Se "keepText" for TRUE, o "image_prompt" DEVE INCLUIR O TEXTO DE DESIGN/COMPOSIÇÃO. Descreva onde o texto deve aparecer, qual a fonte, cor e o conteúdo exato. Tente replicar o estilo da referência.
-      4. O "image_prompt" deve seguir o ESQUELETO acima. Preencha os [...] com descrições ricas baseadas nas referências e na ideia do usuário.
-      5. IMPORTANTE: Se "keepText" for FALSE, NÃO GERE TEXTO NA IMAGEM. O prompt deve garantir que a imagem seja limpa.
+      4. O "image_prompt" deve seguir o ESQUELETO acima. Preencha os [...] com descrições MÁXIMAS E PRECISAS baseadas nas orientações dos Passos 1 ou 1.5.
+      5. IMPORTANTE: Se "keepText" for FALSE, NÃO GERE TEXTO FLUTUANTE NA IMAGEM. O prompt deve garantir que a imagem não tenha sobreposições de texto inseridas em pós-edição, mantendo estritamente os textos orgânicos e reais do sujeito e cenário descritos.
       6. POSICIONAMENTO DO SUJEITO: O usuário escolheu posicionar o sujeito principal em: "${subjectPosition.toUpperCase()}". O prompt deve refletir isso explicitamente na Orientação.
-      7. CRÍTICO (FIDELIDADE ABSOLUTA): Se houver uma foto de sujeito (pessoa), o prompt DEVE instruir a IA geradora a atuar como um "clone biométrico". A identidade da pessoa (traços anatômicos, cor da pele, formato do crânio, olhos, nariz) DEVE ser descrita minuciosamente no prompt para garantir preservação total da fisionomia.
+      7. CRÍTICO (FIDELIDADE ABSOLUTA DA IDENTIDADE E EXPRESSÃO): O prompt DEVE exigir que a imagem use a mesma face da foto sem alterações estruturais, sem inventar novos traços. Se tentar descrever, apenas peça para copiar "identity from image", "copy facial expressions perfectly". A exigência fundamental é ser uma CLONAGEM PERFEITA, não uma "interpretação aproximada".
       8. REFERÊNCIAS VISUAIS: Se houver referências, o sujeito DEVE ser inserido NESTE CONTEXTO/CENÁRIO. A referência dita a iluminação, o fundo, a composição e o estilo. O sujeito (da foto do modelo) é o "ator" que entra neste "palco" (da referência).
       9. SUJEITOS MÚLTIPLOS: Se houver múltiplos sujeitos, cada um tem sua própria descrição abaixo. Respeite as características individuais de cada um.
       10. ENQUADRAMENTO: O usuário selecionou o enquadramento: "${photoSettings.framing}". O prompt DEVE refletir isso explicitamente na descrição da composição e distância da câmera.
@@ -268,7 +271,7 @@ export const analyzeAndGeneratePrompt = async (
 
 
 /**
- * ETAPA 2: A CRIAÇÃO DA IMAGEM (Gemini 3.0 Pro Image)
+ * ETAPA 2: A CRIAÇÃO DA IMAGEM (Gemini 3.1 Flash Image)
  * Processo: Pega o Prompt detalhado da Etapa 1 + Foto do Modelo.
  * Regra: NÃO recebe as referências visuais (apenas o texto descritivo delas e o texto a ser renderizado).
  */
@@ -277,7 +280,7 @@ export const generateImage = async (
     subjectImages: SubjectImage[],
     references: ReferenceImage[],
     aspectRatio: string,
-    model: string = 'gemini-3-pro-image-preview'
+    model: string = 'gemini-3.1-flash-image-preview'
 ): Promise<string> => {
     const ai = getAIClient();
    
@@ -307,7 +310,7 @@ export const generateImage = async (
         config: {
             imageConfig: {
                 aspectRatio: aspectRatio === '4:5' ? '3:4' : aspectRatio as any,
-                ...(model === 'gemini-3-pro-image-preview' ? { imageSize: "2K" as any } : {})
+                ...(model === 'gemini-3.1-flash-image-preview' ? { imageSize: "2K" as any } : {})
             }
         }
     });
@@ -329,7 +332,7 @@ export const generateImage = async (
 };
 
 /**
- * ETAPA 3: EDIÇÃO DE IMAGEM (Gemini 3.0 Pro Image)
+ * ETAPA 3: EDIÇÃO DE IMAGEM (Gemini 3.1 Flash Image)
  * Permite modificar uma imagem existente com base em uma máscara e um prompt.
  */
 export const editImage = async (
@@ -357,7 +360,7 @@ export const editImage = async (
     parts.push({ text: prompt });
 
     const response = await generateContentWithRetry(ai, {
-        model: 'gemini-3-pro-image-preview',
+        model: 'gemini-3.1-flash-image-preview',
         contents: { parts: parts },
         config: {
             imageConfig: {
@@ -395,7 +398,7 @@ export const generateVariations = async (
     parts.push({ text: `Gere uma variação criativa desta imagem. Mantenha a composição e o estilo, mas varie os detalhes. Prompt original: ${prompt}` });
 
     const response = await generateContentWithRetry(ai, {
-        model: 'gemini-3-pro-image-preview',
+        model: 'gemini-3.1-flash-image-preview',
         contents: { parts: parts },
         config: {
             imageConfig: {
