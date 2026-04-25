@@ -153,7 +153,8 @@ export const analyzeAndGeneratePrompt = async (
 
       ESQUELETO DO OBJETO JSON 'image_prompt_json':
       - Mapeie TODA a composição visual, elementos centrais, personagens secundários, ambiente e texturas (exatamente como no formato json fornecido por instrução e preenchendo todos os atributos aplicáveis).
-      - Na chave descricao_do_sujeito: Descreva a fisionomia com extrema precisão. (Não use textos conversacionais ou ordens diretas para a IA, apenas descreva visualmente).
+      - Na chave descricao_do_sujeito: Descreva a fisionomia com extrema precisão visual e realismo fotográfico. Adicione riqueza de detalhes: nitidez de fotografia real, microestruturas naturais da pele, pequenos pelos faciais sutis, poros visíveis, imperfeições humanas orgânicas e linhas de expressão naturais. (Não use textos conversacionais ou ordens diretas para a IA, apenas descreva visualmente).
+      - TEXTURAS E MICRODETALHES: Especifique "fotografia hiper-realista", "qualidade de lente prime", "resolução 8K", "textura de pele humana real" e texturas realistas para tecidos e superfícies da cena.
       - A ideia é manter a essência da referência (roupa, cenário, luz) substituindo APENAS o sujeito pelo sujeito do usuário.
       - NÃO adicione textos no design a não ser que sejam textos orgânicos gravados em camisas, crachás ou estruturas do fundo.
 
