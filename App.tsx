@@ -152,6 +152,7 @@ const App: React.FC = () => {
     color3: "#808080",
     
     selectedModel: 'gemini-3.1-flash-image-preview',
+    interpretationModel: 'gemini-3.1-pro-preview',
 
     lastGeneratedPrompt: "",
     lastGeneratedTextLayers: [],
@@ -403,7 +404,8 @@ const App: React.FC = () => {
             gaze: state.selectedGaze,
             expression: state.selectedExpression,
             skinTexture: state.selectedSkinTexture
-        }
+        },
+        state.interpretationModel
       );
 
       setState(prev => ({ 
@@ -1069,7 +1071,7 @@ const App: React.FC = () => {
                             <div className="space-y-6">
                                 {/* Model Selection */}
                                 <div className="mb-4">
-                                    <p className="text-[9px] uppercase font-bold text-gray-500 mb-2 tracking-widest">Modelo de IA</p>
+                                    <p className="text-[9px] uppercase font-bold text-gray-500 mb-2 tracking-widest">Modelo de Geração de Imagem</p>
                                     <div className="flex flex-col gap-2">
                                         <button 
                                             onClick={() => setState(prev => ({...prev, selectedModel: 'gemini-3.1-flash-image-preview'}))} 
@@ -1084,6 +1086,25 @@ const App: React.FC = () => {
                                         >
                                             <span>Nano Banana (Padrão)</span>
                                             {state.selectedModel === 'gemini-2.5-flash-image' && <i className="fas fa-check text-neon-500"></i>}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="mb-4">
+                                    <p className="text-[9px] uppercase font-bold text-gray-500 mb-2 tracking-widest">Modelo de Interpretação</p>
+                                    <div className="flex flex-col gap-2">
+                                        <button 
+                                            onClick={() => setState(prev => ({...prev, interpretationModel: 'gemini-3.1-pro-preview'}))} 
+                                            className={`w-full py-2 px-3 text-[10px] font-mono transition-all border border-white/5 text-left flex items-center justify-between ${state.interpretationModel === 'gemini-3.1-pro-preview' ? 'bg-white/10 text-white border-neon-500/30' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                                        >
+                                            <span>Gemini 3.1 Pro (Atual)</span>
+                                            {state.interpretationModel === 'gemini-3.1-pro-preview' && <i className="fas fa-check text-neon-500"></i>}
+                                        </button>
+                                        <button 
+                                            onClick={() => setState(prev => ({...prev, interpretationModel: 'gemini-3-flash-preview'}))} 
+                                            className={`w-full py-2 px-3 text-[10px] font-mono transition-all border border-white/5 text-left flex items-center justify-between ${state.interpretationModel === 'gemini-3-flash-preview' ? 'bg-white/10 text-white border-neon-500/30' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                                        >
+                                            <span>Gemini 3 Flash</span>
+                                            {state.interpretationModel === 'gemini-3-flash-preview' && <i className="fas fa-check text-neon-500"></i>}
                                         </button>
                                     </div>
                                 </div>

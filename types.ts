@@ -89,6 +89,7 @@ export interface AppState {
   floatingElements: string;
 
   selectedModel: 'gemini-3.1-flash-image-preview' | 'gemini-2.5-flash-image';
+  interpretationModel: 'gemini-3.1-pro-preview' | 'gemini-3-flash-preview';
 
   error: string | null;
   statusMessage: { type: 'success' | 'error', text: string } | null;
