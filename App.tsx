@@ -152,7 +152,7 @@ const App: React.FC = () => {
     color3: "#808080",
     
     selectedModel: 'gemini-3.1-flash-image-preview',
-    interpretationModel: 'gemini-3.1-pro-preview',
+    interpretationModel: 'gemini-3-flash-preview',
 
     lastGeneratedPrompt: "",
     lastGeneratedTextLayers: [],
@@ -1077,14 +1077,14 @@ const App: React.FC = () => {
                                             onClick={() => setState(prev => ({...prev, selectedModel: 'gemini-3.1-flash-image-preview'}))} 
                                             className={`w-full py-2 px-3 text-[10px] font-mono transition-all border border-white/5 text-left flex items-center justify-between ${state.selectedModel === 'gemini-3.1-flash-image-preview' ? 'bg-white/10 text-white border-neon-500/30' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                                         >
-                                            <span>Gemini 3.1 Flash Image</span>
+                                            <span>Gemini 3.1 Flash Image (Mais preciso)</span>
                                             {state.selectedModel === 'gemini-3.1-flash-image-preview' && <i className="fas fa-check text-neon-500"></i>}
                                         </button>
                                         <button 
                                             onClick={() => setState(prev => ({...prev, selectedModel: 'gemini-2.5-flash-image'}))} 
                                             className={`w-full py-2 px-3 text-[10px] font-mono transition-all border border-white/5 text-left flex items-center justify-between ${state.selectedModel === 'gemini-2.5-flash-image' ? 'bg-white/10 text-white border-neon-500/30' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                                         >
-                                            <span>Nano Banana (Padrão)</span>
+                                            <span>Nano Banana (Padrão - Mais rápido)</span>
                                             {state.selectedModel === 'gemini-2.5-flash-image' && <i className="fas fa-check text-neon-500"></i>}
                                         </button>
                                     </div>
@@ -1096,14 +1096,14 @@ const App: React.FC = () => {
                                             onClick={() => setState(prev => ({...prev, interpretationModel: 'gemini-3.1-pro-preview'}))} 
                                             className={`w-full py-2 px-3 text-[10px] font-mono transition-all border border-white/5 text-left flex items-center justify-between ${state.interpretationModel === 'gemini-3.1-pro-preview' ? 'bg-white/10 text-white border-neon-500/30' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                                         >
-                                            <span>Gemini 3.1 Pro (Atual)</span>
+                                            <span>Gemini 3.1 Pro (Mais preciso)</span>
                                             {state.interpretationModel === 'gemini-3.1-pro-preview' && <i className="fas fa-check text-neon-500"></i>}
                                         </button>
                                         <button 
                                             onClick={() => setState(prev => ({...prev, interpretationModel: 'gemini-3-flash-preview'}))} 
                                             className={`w-full py-2 px-3 text-[10px] font-mono transition-all border border-white/5 text-left flex items-center justify-between ${state.interpretationModel === 'gemini-3-flash-preview' ? 'bg-white/10 text-white border-neon-500/30' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                                         >
-                                            <span>Gemini 3 Flash</span>
+                                            <span>Gemini 3 Flash (Mais rápido)</span>
                                             {state.interpretationModel === 'gemini-3-flash-preview' && <i className="fas fa-check text-neon-500"></i>}
                                         </button>
                                     </div>
