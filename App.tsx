@@ -162,6 +162,7 @@ const App: React.FC = () => {
     results: [],
     history: [],
     isHistoryOpen: false,
+    isFullscreenHistoryOpen: false,
     viewingImage: null,
     
     selectedStyle: "",
@@ -513,6 +514,48 @@ const App: React.FC = () => {
      }));
   };
 
+  const navigateHistory = (direction: 'next' | 'prev') => {
+    setState(prev => {
+        if (!prev.viewingImage) return prev;
+        const currentIndex = prev.history.findIndex(item => item.id === prev.viewingImage?.id);
+        if (currentIndex === -1) return prev; // Not in history
+
+        let newIndex = currentIndex;
+        if (direction === 'prev') {
+            // "Previous" visually means older, which is a higher index in the array
+            newIndex = currentIndex < prev.history.length - 1 ? currentIndex + 1 : currentIndex;
+        } else {
+            // "Next" visually means newer, lower index
+            newIndex = currentIndex > 0 ? currentIndex - 1 : currentIndex;
+        }
+
+        if (newIndex === currentIndex) return prev; // No change
+
+        return {
+            ...prev,
+            viewingImage: prev.history[newIndex]
+        };
+    });
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (state.viewingImage) {
+        if (e.key === 'ArrowLeft') {
+          navigateHistory('prev');
+        } else if (e.key === 'ArrowRight') {
+          navigateHistory('next');
+        } else if (e.key === 'Escape') {
+          setState(prev => ({ ...prev, viewingImage: null }));
+        }
+      } else if (state.isFullscreenHistoryOpen && e.key === 'Escape') {
+          setState(prev => ({ ...prev, isFullscreenHistoryOpen: false }));
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [state.viewingImage, state.history, state.isFullscreenHistoryOpen]);
+
   // Helper labels
   const getLabel = () => {
       if (state.subjectType === 'person_with_object') return "Pessoa ou Objeto";
@@ -749,9 +792,25 @@ const App: React.FC = () => {
                       <i className="fas fa-times"></i>
                   </button>
               </div>
+              
+              <button 
+                onClick={(e) => { e.stopPropagation(); navigateHistory('prev'); }} 
+                className="absolute left-6 top-1/2 -translate-y-1/2 z-[110] w-14 h-14 rounded-full glass-panel text-white flex items-center justify-center hover:bg-white/10 transition-colors border border-white/10 text-xl"
+              >
+                  <i className="fas fa-chevron-left"></i>
+              </button>
+              
               <div className="relative max-h-[90vh] max-w-full flex justify-center items-center">
                   <img src={state.viewingImage.url} className="max-h-[90vh] max-w-full object-contain rounded-sm shadow-2xl border border-white/10" alt="Full View" />
               </div>
+              
+              <button 
+                onClick={(e) => { e.stopPropagation(); navigateHistory('next'); }} 
+                className="absolute right-6 top-1/2 -translate-y-1/2 z-[110] w-14 h-14 rounded-full glass-panel text-white flex items-center justify-center hover:bg-white/10 transition-colors border border-white/10 text-xl"
+              >
+                  <i className="fas fa-chevron-right"></i>
+              </button>
+              
           </div>
       )}
 
@@ -1326,7 +1385,7 @@ const App: React.FC = () => {
             {state.currentTab === 'personas' && renderPersonasTab()}
 
             {/* History Floating Sidebar */}
-            <div className={`fixed right-0 top-0 bottom-0 w-[85vw] max-w-[320px] bg-black/95 backdrop-blur-md border-l border-white/10 transition-transform duration-300 z-[120] shadow-2xl ${state.isHistoryOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className={`fixed right-0 top-16 bottom-0 w-[85vw] max-w-[320px] bg-black/95 backdrop-blur-md border-l border-white/10 transition-transform duration-300 z-[40] shadow-2xl ${state.isHistoryOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                 <div className="p-6 border-b border-white/10 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <h3 className="text-xs font-bold text-white uppercase tracking-widest">LOGS</h3>
@@ -1340,7 +1399,14 @@ const App: React.FC = () => {
                             </button>
                         )}
                     </div>
-                    <button onClick={() => setState(prev => ({...prev, isHistoryOpen: false}))} className="text-gray-500 hover:text-neon-500 transition-colors"><i className="fas fa-times"></i></button>
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => setState(prev => ({...prev, isHistoryOpen: false, isFullscreenHistoryOpen: true}))} className="text-gray-500 hover:text-white transition-colors" title="Tela Cheia">
+                            <i className="fas fa-expand"></i>
+                        </button>
+                        <button onClick={() => setState(prev => ({...prev, isHistoryOpen: false}))} className="text-gray-500 hover:text-neon-500 transition-colors">
+                            <i className="fas fa-times"></i>
+                        </button>
+                    </div>
                 </div>
                 <div className="p-4 space-y-4 overflow-y-auto h-[calc(100%-70px)] custom-scrollbar">
                     {state.history.map(item => (
@@ -1354,6 +1420,80 @@ const App: React.FC = () => {
                     ))}
                 </div>
             </div>
+
+            {/* Full Screen History Modal */}
+            {state.isFullscreenHistoryOpen && (
+                <div className="fixed inset-0 top-16 z-[40] bg-black/95 backdrop-blur-xl flex flex-col pt-0 animate-fade-in custom-scrollbar overflow-y-auto">
+                    <div className="sticky top-0 left-0 w-full h-16 border-b border-white/10 bg-black/80 backdrop-blur-md flex items-center justify-between px-6 z-10 flex-shrink-0">
+                        <div className="flex items-center gap-4">
+                            <h2 className="text-xl font-bold tracking-tight text-white uppercase flex items-center gap-3">
+                                <i className="fas fa-layer-group text-neon-500"></i>
+                                Histórico Completo
+                            </h2>
+                            <span className="text-xs text-gray-500 font-mono">{state.history.length} imagens geradas</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            {state.history.length > 0 && (
+                                <button onClick={() => {
+                                    clearHistoryDB();
+                                    setState(prev => ({...prev, history: []}));
+                                    showStatus('success', 'Histórico apagado com sucesso.');
+                                }} className="text-xs uppercase tracking-widest text-red-500 hover:text-red-400 font-bold border border-red-500/30 px-4 py-2 rounded-sm transition-colors">
+                                    Limpar Histórico
+                                </button>
+                            )}
+                            <button onClick={() => setState(prev => ({...prev, isFullscreenHistoryOpen: false}))} className="w-10 h-10 flex items-center justify-center hover:bg-white/10 text-gray-300 hover:text-white rounded-full transition-colors border border-transparent hover:border-white/10">
+                                <i className="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="p-8 pb-32">
+                        {state.history.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-[50vh] text-center">
+                                <i className="fas fa-ghost text-6xl text-gray-700 mb-6 font-light"></i>
+                                <h3 className="text-xl text-gray-400 font-medium mb-2">Nenhuma imagem no histórico</h3>
+                                <p className="text-sm text-gray-600 max-w-sm">Suas criações aparecerão aqui em formato de galeria assim que você iniciar a geração.</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 hover:cursor-pointer">
+                                {state.history.map((item, index) => (
+                                    <div 
+                                        key={item.id} 
+                                        className="relative group border border-white/5 bg-[#111] overflow-hidden rounded-sm hover:border-neon-500/50 transition-all duration-300 aspect-[3/4] flex flex-col"
+                                        onClick={() => openImage(item.url, item.id, item.prompt, item.textLayers)}
+                                    >
+                                        <div className="flex-1 w-full bg-black relative overflow-hidden">
+                                            <img 
+                                                src={item.url} 
+                                                alt={`Item ${index}`}
+                                                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 grayscale group-hover:grayscale-0"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-4">
+                                                 <div className="flex gap-4">
+                                                    <button onClick={(e) => { e.stopPropagation(); openImage(item.url, item.id, item.prompt, item.textLayers); }} className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-neon-500 transition-colors">
+                                                        <i className="fas fa-expand text-sm"></i>
+                                                    </button>
+                                                    <button onClick={(e) => { e.stopPropagation(); deleteHistoryItem(item.id, e); }} className="w-10 h-10 rounded-full bg-red-900/80 text-white flex items-center justify-center hover:bg-red-500 transition-colors">
+                                                        <i className="fas fa-trash text-sm"></i>
+                                                    </button>
+                                                 </div>
+                                            </div>
+                                        </div>
+                                        <div className="p-4 border-t border-white/5 flex justify-between items-center bg-[#111]">
+                                            <div className="flex flex-col gap-1">
+                                                <p className="text-[10px] font-mono text-gray-500">ID: {item.id.substring(0,6)}</p>
+                                                <p className="text-xs text-gray-300 font-medium truncate max-w-[180px]">{item.prompt ? (item.prompt.length > 25 ? item.prompt.substring(0, 25) + '...' : item.prompt) : 'Sem prompt'}</p>
+                                            </div>
+                                            <span className="text-[10px] font-mono text-gray-500 bg-black/50 px-2 py-1 rounded-sm border border-white/5">{new Date(item.timestamp).toLocaleDateString()}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
       </div>
     </div>

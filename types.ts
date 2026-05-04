@@ -71,6 +71,7 @@ export interface AppState {
   results: string[];
   history: HistoryItem[];
   isHistoryOpen: boolean;
+  isFullscreenHistoryOpen: boolean;
   viewingImage: HistoryItem | null;
   
   // Photography Settings
