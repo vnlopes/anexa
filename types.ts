@@ -65,6 +65,7 @@ export interface AppState {
   color3: string;
   
   lastGeneratedPrompt: string;
+  lastGeneratedTextLayers: TextLayerData[];
   isProcessing: boolean;
   loadingStep: string;
   loadingProgress: number;
@@ -89,7 +90,7 @@ export interface AppState {
   selectedSkinTexture: string[];
   floatingElements: string;
 
-  selectedModel: 'gemini-3.1-flash-image-preview' | 'gemini-2.5-flash-image';
+  selectedModel: 'gemini-3.1-flash-image-preview' | 'gemini-2.5-flash-image' | 'gemini-3-pro-image-preview';
   interpretationModel: 'gemini-3.1-pro-preview' | 'gemini-3-flash-preview';
 
   error: string | null;

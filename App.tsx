@@ -129,8 +129,8 @@ const PHOTO_OPTIONS = [
     }
 ];
 
-const App: React.FC = () => {
-  const [state, setState] = useState<AppState & { lastGeneratedTextLayers: TextLayerData[] }>({
+const App = () => {
+  const [state, setState] = useState<AppState>({
     currentTab: 'editor',
     personas: [],
     selectedPersonaIds: [],
@@ -178,15 +178,20 @@ const App: React.FC = () => {
     selectedSkinTexture: [],
     floatingElements: "",
 
+    keepText: false,
     error: null,
     statusMessage: null
   });
 
   const [openSection, setOpenSection] = useState<string | null>(null);
-  const toggleSection = (id: string) => setOpenSection(openSection === id ? null : id);
   const [hasApiKey, setHasApiKey] = useState(false);
   const [showApiInput, setShowApiInput] = useState(false);
   const [apiInputValue, setApiInputValue] = useState('');
+  const [newPersonaName, setNewPersonaName] = useState("");
+  const [newPersonaImages, setNewPersonaImages] = useState<string[]>([]);
+  const [editingPersonaId, setEditingPersonaId] = useState<string | null>(null);
+
+  const toggleSection = (id: string) => setOpenSection(openSection === id ? null : id);
 
   useEffect(() => {
     checkApiKey();
@@ -417,27 +422,32 @@ const App: React.FC = () => {
         loadingProgress: 60 
       }));
 
-      const generationPromises = [];
-      for (let i = 0; i < state.imageCount; i++) {
-          generationPromises.push(
+      const generationResults = await Promise.allSettled(
+          Array.from({ length: state.imageCount }).map(() => 
               generateImage(
                   prompt,
                   finalSubjectImages,
                   state.referenceImages, 
                   state.aspectRatio,
                   state.selectedModel
-              ).catch(err => {
-                  console.error(`Error generating image ${i + 1}:`, err);
-                  return null;
-              })
-          );
-      }
+              )
+          )
+      );
 
-      const resultsArray = await Promise.all(generationPromises);
-      const newImages = resultsArray.filter((img): img is string => img !== null);
+      const newImages: string[] = [];
+      let lastErrorMsg = "";
+
+      generationResults.forEach((result, idx) => {
+          if (result.status === 'fulfilled') {
+              newImages.push(result.value);
+          } else {
+              console.error(`Error generating image ${idx + 1}:`, result.reason);
+              lastErrorMsg = result.reason?.message || String(result.reason);
+          }
+      });
 
       if (newImages.length === 0 && state.imageCount > 0) {
-          throw new Error("Falha ao gerar imagens. Tente novamente.");
+          throw new Error(lastErrorMsg || "Falha ao gerar imagens. Tente novamente.");
       }
       
       addToHistory(newImages, prompt, textLayers);
@@ -453,13 +463,23 @@ const App: React.FC = () => {
 
     } catch (err: any) {
       console.error(err);
+      let errorMsg = err.message || 'Erro desconhecido';
+      
+      if (errorMsg.includes('QUOTA_LIMIT_0')) {
+          errorMsg = errorMsg.split('QUOTA_LIMIT_0: ')[1] || errorMsg;
+      } else if (errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED')) {
+          errorMsg = "Limite de uso atingido (429). Aguarde alguns segundos ou use um modelo mais rápido como o 'Nano Banana'.";
+      } else if (errorMsg.includes('API Key not found')) {
+          errorMsg = "Chave API não configurada. Por favor, insira sua chave no topo da página.";
+      }
+
       setState(prev => ({
         ...prev,
         isProcessing: false,
-        error: err.message || 'Erro desconhecido',
+        error: errorMsg,
         loadingProgress: 0
       }));
-      showStatus('error', err.message || 'Falha na geração.');
+      showStatus('error', errorMsg);
     }
   };
 
@@ -600,10 +620,6 @@ const App: React.FC = () => {
       }
   };
 
-  const [newPersonaName, setNewPersonaName] = useState("");
-  const [newPersonaImages, setNewPersonaImages] = useState<string[]>([]);
-  const [editingPersonaId, setEditingPersonaId] = useState<string | null>(null);
-
   const handleSavePersona = () => {
       if (!newPersonaName.trim()) {
           showStatus('error', 'Dê um nome ao modelo.');
@@ -615,7 +631,7 @@ const App: React.FC = () => {
       }
 
       const persona: Persona = {
-          id: editingPersonaId || crypto.randomUUID(),
+          id: editingPersonaId || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 11)),
           name: newPersonaName.trim(),
           images: newPersonaImages
       };
@@ -1133,17 +1149,24 @@ const App: React.FC = () => {
                                     <p className="text-[9px] uppercase font-bold text-gray-500 mb-2 tracking-widest">Modelo de Geração de Imagem</p>
                                     <div className="flex flex-col gap-2">
                                         <button 
+                                            onClick={() => setState(prev => ({...prev, selectedModel: 'gemini-3-pro-image-preview'}))} 
+                                            className={`w-full py-2 px-3 text-[10px] font-mono transition-all border border-white/5 text-left flex items-center justify-between ${state.selectedModel === 'gemini-3-pro-image-preview' ? 'bg-white/10 text-white border-neon-500/30' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                                        >
+                                            <span>Gemini 3 Pro Image (Qualidade Cinema)</span>
+                                            {state.selectedModel === 'gemini-3-pro-image-preview' && <i className="fas fa-check text-neon-500"></i>}
+                                        </button>
+                                        <button 
                                             onClick={() => setState(prev => ({...prev, selectedModel: 'gemini-3.1-flash-image-preview'}))} 
                                             className={`w-full py-2 px-3 text-[10px] font-mono transition-all border border-white/5 text-left flex items-center justify-between ${state.selectedModel === 'gemini-3.1-flash-image-preview' ? 'bg-white/10 text-white border-neon-500/30' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                                         >
-                                            <span>Gemini 3.1 Flash Image (Mais preciso)</span>
+                                            <span>Gemini 3.1 Flash Image (Equilibrado)</span>
                                             {state.selectedModel === 'gemini-3.1-flash-image-preview' && <i className="fas fa-check text-neon-500"></i>}
                                         </button>
                                         <button 
                                             onClick={() => setState(prev => ({...prev, selectedModel: 'gemini-2.5-flash-image'}))} 
                                             className={`w-full py-2 px-3 text-[10px] font-mono transition-all border border-white/5 text-left flex items-center justify-between ${state.selectedModel === 'gemini-2.5-flash-image' ? 'bg-white/10 text-white border-neon-500/30' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                                         >
-                                            <span>Nano Banana (Padrão - Mais rápido)</span>
+                                            <span>Nano Banana (Rápido / Grátis)</span>
                                             {state.selectedModel === 'gemini-2.5-flash-image' && <i className="fas fa-check text-neon-500"></i>}
                                         </button>
                                     </div>

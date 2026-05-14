@@ -55,7 +55,7 @@ const getImagePart = (base64: string | null) => {
 };
 
 // Helper for retry logic
-const generateContentWithRetry = async (ai: any, params: any, maxRetries = 3) => {
+const generateContentWithRetry = async (ai: any, params: any, maxRetries = 4) => {
     let lastError;
     for (let i = 0; i < maxRetries; i++) {
         try {
@@ -64,14 +64,30 @@ const generateContentWithRetry = async (ai: any, params: any, maxRetries = 3) =>
             lastError = error;
             console.error(`Attempt ${i + 1} failed with error:`, error);
             const errorStr = typeof error === 'object' ? JSON.stringify(error, Object.getOwnPropertyNames(error)) : String(error);
+            const isQuotaError = error?.status === 429 || errorStr.includes('429') || errorStr.includes('RESOURCE_EXHAUSTED') || errorStr.includes('quota');
+            
             console.error("Error details:", errorStr);
             
-            if (error?.status === 500 || errorStr.includes('500') || errorStr.includes('Internal error') || errorStr.includes('429') || errorStr.includes('quota')) {
+            if (isQuotaError) {
+                // If we get "limit: 0", it's a hard limit, no point in retrying
+                if (errorStr.includes('limit: 0')) {
+                    const modelName = errorStr.includes('gemini-3.1-flash-image') ? 'Gemini 3.1 Flash' : 
+                                     errorStr.includes('gemini-3-pro-image') ? 'Gemini 3 Pro' : 'Este modelo';
+                    throw new Error(`QUOTA_LIMIT_0: O modelo ${modelName} não tem cota disponível para sua conta/chave no momento. Use o 'Nano Banana' nos Ajustes Finos.`);
+                }
+                
+                // Exponential backoff with a bit more buffer
+                const waitTime = (3000 * Math.pow(2, i)) + (Math.random() * 1000);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+                continue;
+            }
+
+            if (error?.status === 500 || errorStr.includes('500') || errorStr.includes('Internal error')) {
                 // Wait before retrying (exponential backoff)
                 await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
                 continue;
             }
-            throw new Error(`API Error: ${error.message || errorStr}`); // Throw immediately for non-500 errors
+            throw new Error(`API Error: ${error.message || errorStr}`); // Throw immediately for other errors
         }
     }
     throw new Error(`Failed after ${maxRetries} attempts. Last error: ${lastError?.message || lastError}`);
@@ -364,7 +380,7 @@ export const generateImage = async (
         config: {
             imageConfig: {
                 aspectRatio: aspectRatio === '4:5' ? '3:4' : aspectRatio as any,
-                ...(model === 'gemini-3.1-flash-image-preview' ? { imageSize: "2K" as any } : {})
+                ...(model === 'gemini-3.1-flash-image-preview' || model === 'gemini-3-pro-image-preview' ? { imageSize: "2K" as any } : {})
             }
         }
     });
